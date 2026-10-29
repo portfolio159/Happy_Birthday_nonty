@@ -1,0 +1,81 @@
+// Gallery
+
+.gallery-grid {
+    a {
+        cursor: url("../img/gall-zoom-in.png"), pointer;
+    }
+
+    figure {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+
+        img {
+            display: block;
+            position: relative;
+            top: 0;
+            transition: all .3s ease;
+            width: 100%;
+        }
+
+        &:hover {
+            img {
+                transform: scale(1.2, 1.2);
+                -webkit-transform: scale(1.2, 1.2);
+                -ms-transform: scale(1.2, 1.2);
+            }
+        }
+    }
+}
+
+// Gallery lightbox
+.vbox-container {
+    cursor: url("../img/gall-zoom-out.png"), zoom-out;
+}
+
+.vbox-next,
+.vbox-prev {
+    background-repeat: no-repeat;
+    background-position: center;
+    height: 60px;
+    margin-top: -30px;
+    width: 60px;
+
+    span {
+        display: none;
+    }
+}
+
+.vbox-next {
+    background-image: url("../img/gall-arrow-next.png");
+    right: 25px !important;
+}
+
+.vbox-prev {
+    background-image: url("../img/gall-arrow-prev.png");
+    left: 25px !important;
+}
+
+.vbox-num,
+.vbox-close {
+    color: $body-color;
+    font-size: $h4-font-size;
+    opacity: 1;
+    padding: 16px 16px;
+}
+
+.vbox-grab {
+    .vbox-child {
+        img {
+            cursor: url("../img/gall-arrow-grab.png"), grab;
+        }
+    }
+}
+
+@include media-breakpoint-up(lg) {
+    .vbox-close {
+        display: none;
+    }
+}

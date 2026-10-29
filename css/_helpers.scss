@@ -1,0 +1,74 @@
+// Helpers
+
+// Background images
+.bg-holder {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+}
+
+// Buttons
+.btn {
+    background-image: url('../img/button.svg');
+    color: $white;
+    display: block;
+    font-family: $font-family-alt;
+    font-size: $h5-font-size;
+    height: 74px;
+    line-height: 74px;
+    text-align: center;
+    width: 160px;
+
+    span {
+        opacity: 0.9;
+        transition: opacity .3s ease;
+    }
+
+    &:hover {
+        text-decoration: none;
+
+        span {
+            opacity: 1;
+        }
+    }
+}
+
+// Fonts
+.font-base {
+    font-family: $font-family-base !important;
+}
+
+.font-alt {
+    font-family: $font-family-alt !important;
+}
+
+// Position
+.fixed-top {
+    left: 0;
+    right: 0;
+    position: fixed;
+    top: 0;
+    z-index: $zindex-fixed;
+}
+
+// Preloader
+.preloader {
+    z-index: 5000;
+}
+
+// Spacer
+.spacer {
+    height: $navbar-height;
+}
+
+// Validator
+.validator-err {
+    color: $danger;
+    font-size: $h10-font-size;
+    margin: 0;
+    opacity: 0.7;
+    position: absolute;
+    right: 1rem;
+    top: 0;
+}

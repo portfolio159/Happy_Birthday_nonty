@@ -1,0 +1,47 @@
+// Animation
+
+// Anim heart
+.anim-heart {
+    animation: 1.11111s linear -0.833333s infinite normal forwards running anim-heart;
+    transform: scale(0.91);
+    transform-origin: 50px 50px;
+
+    &-sm {
+        animation: 1.11111s linear -1.11111s infinite normal forwards running anim-heart;
+        transform: scale(0.91);
+        transform-origin: 50px 50px;
+    }
+}
+
+@keyframes anim-heart {
+    0% {
+        animation-timing-function: cubic-bezier(0.9647, 0.2413, -0.0705, 0.7911);
+        transform: scale(0.9099999999999999);
+    }
+
+    51% {
+        animation-timing-function: cubic-bezier(0.9226, 0.2631, -0.0308, 0.7628);
+        transform: scale(1.02994);
+    }
+
+    100% {
+        transform: scale(0.9099999999999999);
+    }
+}
+
+// Anim zoom
+.anim-zoom {
+    animation: anim-zoom 15s 2s alternate infinite;
+}
+
+@keyframes anim-zoom {
+    0% {
+        -webkit-transform: scale3d(1, 1, 1);
+        transform: scale3d(1, 1, 1);
+    }
+
+    100% {
+        -webkit-transform: scale3d(1.3, 1.3, 1.3);
+        transform: scale3d(1.3, 1.3, 1.3);
+    }
+}

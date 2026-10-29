@@ -1,0 +1,60 @@
+// Base
+
+a {
+    text-decoration: none;
+}
+
+button {
+    background: transparent;
+    border: 0;
+}
+
+// Form
+input,
+select,
+textarea {
+    box-shadow: none;
+    color: $body-secondary-color;
+    outline: none;
+
+    &::placeholder {
+        color: $body-secondary-color;
+    }
+}
+
+// Sections
+section,
+.section {
+    overflow-x: hidden;
+    padding-bottom: 70px;
+    padding-top: 70px;
+    position: relative;
+}
+
+@include media-breakpoint-up(lg) {
+
+    // Scrollbar custom
+    ::-webkit-scrollbar {
+        width: 12px;
+
+        &-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+            -moz-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, .3)
+        }
+
+        &-thumb {
+            background: rgba(210, 210, 210, .8);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .5);
+            -moz-box-shadow: inset 0 0 6px rgba(0, 0, 0, .5);
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, .5)
+        }
+    }
+
+    // Sections
+    section,
+    .section {
+        padding-bottom: 100px;
+        padding-top: 100px;
+    }
+}

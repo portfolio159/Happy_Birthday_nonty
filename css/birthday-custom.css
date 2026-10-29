@@ -1,0 +1,402 @@
+/* =========================================================================
+   Birthday App Custom Styles — Happy Birthday Nonty
+   Overrides and enhancements for mystery countdowns, gallery empty state,
+   and the RSVP response form.
+   ========================================================================= */
+
+/* 1. SECTION SCROLL OFFSETS & PADDING (Prevents fixed navbar overlapping headers) */
+section,
+.section,
+#hero,
+#the-couple,
+#wedding-event,
+#wedding-party,
+#proposed,
+#photos,
+#rsvp {
+    scroll-margin-top: 140px !important;
+}
+
+#wedding-event {
+    padding-top: 130px !important;
+    padding-bottom: 90px !important;
+}
+
+/* 2. STAGE CARDS & MYSTERY COUNTDOWN */
+.stage-card-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+.stage-content-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    text-align: center !important;
+    padding: 1.75rem 1.25rem;
+    z-index: 2;
+}
+
+@media (min-width: 576px) {
+    .stage-content-overlay {
+        padding: 2.25rem 1.5rem;
+    }
+}
+
+.stage-lock-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    display: inline-block;
+    filter: drop-shadow(0 2px 4px rgba(184, 67, 81, 0.2));
+}
+
+.stage-countdown-box {
+    background: linear-gradient(135deg, #FFF8F9 0%, #FDF0F2 100%);
+    border: 1.5px solid rgba(184, 67, 81, 0.22);
+    border-radius: 14px;
+    padding: 8px 12px 10px 12px;
+    margin: 8px auto 4px auto;
+    max-width: 280px;
+    box-shadow: 0 4px 14px rgba(184, 67, 81, 0.06);
+}
+
+.stage-countdown-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #B84351;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stage-countdown-timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stage-countdown-unit {
+    background: #ffffff;
+    border: 1px solid #F0CCD1;
+    border-radius: 8px;
+    padding: 3px 6px;
+    min-width: 42px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(184, 67, 81, 0.05);
+}
+
+.stage-countdown-unit .num {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #B84351;
+    line-height: 1.1;
+    font-family: 'Poppins', sans-serif;
+    display: block;
+}
+
+.stage-countdown-unit .lbl {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8C535D;
+    margin-top: 1px;
+    display: block;
+}
+
+.stage-colon {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #B84351;
+    opacity: 0.6;
+    margin-bottom: 6px;
+}
+
+.stage-mystery-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 50px;
+    padding: 3px 14px;
+    display: inline-block;
+    margin-top: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+
+/* 3. GALLERY EMPTY STATE */
+.gallery-empty-card {
+    background: linear-gradient(145deg, #FFF9FA 0%, #FDF0F2 100%);
+    border: 2px dashed rgba(184, 67, 81, 0.35);
+    border-radius: 24px;
+    padding: 3.5rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(184, 67, 81, 0.06);
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.empty-gallery-icon {
+    font-size: 52px;
+    display: inline-block;
+    animation: gentlePulse 2s infinite ease-in-out;
+}
+
+@keyframes gentlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+
+/* 4. RSVP FORM REDESIGN */
+#rsvp {
+    padding-top: 140px !important;
+    padding-bottom: 120px !important;
+}
+
+.rsvp-card {
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1.5px solid rgba(223, 164, 171, 0.45);
+    box-shadow: 0 18px 45px rgba(184, 67, 81, 0.12), 0 2px 10px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+}
+
+.rsvp-card-header {
+    background: linear-gradient(135deg, #B84351 0%, #CB5160 100%);
+    padding: 24px 20px;
+    color: #ffffff;
+    text-align: center;
+    position: relative;
+}
+
+.rsvp-header-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-bottom: 8px;
+    backdrop-filter: blur(4px);
+}
+
+.rsvp-card-body {
+    background: #ffffff;
+    padding: 24px 20px 40px 20px !important;
+}
+
+@media (min-width: 768px) {
+    .rsvp-card-body {
+        padding: 34px 30px 48px 30px !important;
+    }
+}
+
+/* Choice Box */
+.rsvp-choice-box {
+    background: linear-gradient(135deg, #FFF6F7 0%, #FDF0F2 100%);
+    border: 2px solid #E2838C;
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.rsvp-choice-box:hover {
+    background: #FFEBEF;
+    border-color: #B84351;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(184, 67, 81, 0.12);
+}
+
+.rsvp-choice-box input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    accent-color: #B84351;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.rsvp-choice-text {
+    color: #B84351;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Inputs & Textarea */
+.rsvp-input {
+    border: 1.5px solid #F0CCD1 !important;
+    background-color: #FFFDFD !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    font-size: 0.95rem !important;
+    color: #212529 !important;
+    font-family: 'Poppins', sans-serif !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    width: 100%;
+}
+
+.rsvp-input:focus {
+    border-color: #B84351 !important;
+    box-shadow: 0 0 0 4px rgba(184, 67, 81, 0.15) !important;
+    background-color: #ffffff !important;
+    outline: none !important;
+}
+
+/* Voice Recorder Box */
+.voice-recorder-box {
+    background: #FFF9FA;
+    border: 1.5px dashed #E2838C;
+    border-radius: 16px;
+    padding: 18px 20px;
+}
+
+.voice-btn-record {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #ffffff;
+    background-image: none !important;
+    border: 1.5px solid #E2838C;
+    color: #B84351;
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    width: auto;
+    height: auto;
+    line-height: normal;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(184, 67, 81, 0.1);
+}
+
+.voice-btn-record.d-none {
+    display: none !important;
+}
+
+.voice-btn-record:hover {
+    background: #B84351;
+    color: #ffffff;
+    border-color: #B84351;
+    box-shadow: 0 4px 14px rgba(184, 67, 81, 0.25);
+    transform: translateY(-1px);
+}
+
+.voice-btn-stop {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #dc3545;
+    background-image: none !important;
+    border: 1.5px solid #dc3545;
+    color: #ffffff;
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    width: auto;
+    height: auto;
+    line-height: normal;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: pulseRecording 1.4s infinite;
+}
+
+.voice-btn-stop.d-none {
+    display: none !important;
+}
+
+.rec-dot {
+    width: 10px;
+    height: 10px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulseRecording 1s infinite;
+}
+
+@keyframes pulseRecording {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(1.3); }
+}
+
+/* Submit Button */
+.rsvp-submit-btn {
+    background: linear-gradient(135deg, #B84351 0%, #D75A68 100%) !important;
+    background-image: linear-gradient(135deg, #B84351 0%, #D75A68 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 50px !important;
+    padding: 16px 42px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    width: auto !important;
+    min-width: 240px !important;
+    height: auto !important;
+    line-height: normal !important;
+    box-shadow: 0 8px 24px rgba(184, 67, 81, 0.32) !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+}
+
+.rsvp-submit-btn:hover {
+    background: linear-gradient(135deg, #A13845 0%, #C34B59 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(184, 67, 81, 0.42) !important;
+    color: #ffffff !important;
+}
+
+.rsvp-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Success Card */
+.rsvp-celebrate-emoji {
+    font-size: 58px;
+}
+
+.rsvp-pill-badge {
+    background: #FCF4F5;
+    border: 1px solid #DFA4AB;
+    color: #B84351;
+    font-weight: 600;
+}
+
+/* Right Column Companion Card */
+.rsvp-side-card {
+    background: linear-gradient(145deg, #FFF8F9 0%, #FCF1F3 100%);
+    border: 1.5px solid rgba(223, 164, 171, 0.4);
+    box-shadow: 0 15px 35px rgba(184, 67, 81, 0.07);
+}

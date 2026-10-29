@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Birthday Dashboard 🎂</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #B84351;
+            --secondary: #DFA4AB;
+            --bg: #FCF4F5;
+            --dark: #2c2c2c;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary), #963745);
+            box-shadow: 0 2px 12px rgba(184, 67, 81, 0.3);
+        }
+
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: #fff !important;
+        }
+
+        .navbar-custom .nav-link:hover {
+            opacity: 0.85;
+        }
+
+        .card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary), #a33b4a);
+            color: #fff;
+            border-radius: 14px 14px 0 0 !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 1rem 1.25rem;
+        }
+
+        .btn-primary-custom {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #a33b4a;
+            border-color: #a33b4a;
+            color: #fff;
+        }
+
+        .btn-outline-custom {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline-custom:hover {
+            background-color: var(--primary);
+            color: #fff;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(184, 67, 81, 0.25);
+            border-color: var(--secondary);
+        }
+
+        .badge-visible {
+            background-color: #198754;
+            font-weight: 500;
+        }
+
+        .badge-hidden {
+            background-color: #ffc107;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .gallery-thumb {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--secondary);
+        }
+
+        .gallery-item {
+            background: #fff;
+            border: 1px solid #f0e0e3;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: background 0.15s;
+        }
+
+        .gallery-item:hover {
+            background: var(--bg);
+        }
+
+        .rsvp-item {
+            background: #fff;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #999;
+            font-style: italic;
+        }
+
+        .empty-state .emoji {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+        }
+
+        .quick-action-btn {
+            min-width: 180px;
+        }
+
+        .subtitle {
+            opacity: 0.85;
+            font-size: 0.9rem;
+        }
+
+        audio {
+            height: 36px;
+            border-radius: 20px;
+        }
+
+        @media (max-width: 576px) {
+            .quick-action-btn {
+                min-width: 100%;
+            }
+        }
+
+        /* ── Auth Screen Styles ── */
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: radial-gradient(circle at center, #ffffff 0%, var(--bg) 100%);
+        }
+
+        .auth-card {
+            max-width: 440px;
+            width: 100%;
+            border-radius: 20px;
+            border: 1px solid rgba(184, 67, 81, 0.18);
+            background: #ffffff;
+            box-shadow: 0 10px 40px rgba(184, 67, 81, 0.12);
+        }
+
+        .auth-icon-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fcecef, #f7d5da);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            box-shadow: 0 4px 14px rgba(184, 67, 81, 0.15);
+            margin: 0 auto;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth / Password Screen (Shown when locked) -->
+    <div id="authScreen" class="auth-wrapper">
+        <div class="card auth-card p-4 p-sm-5 text-center" id="authBox">
+            <div class="mb-4">
+                <div class="auth-icon-circle mb-3">🔐</div>
+                <h3 class="fw-bold mb-1" style="color: var(--primary);">Protected Dashboard</h3>
+                <p class="text-muted small mb-0">Enter your secret password to manage Nonty's birthday surprise website.</p>
+            </div>
+
+            <form id="authForm" onsubmit="handleLogin(event)">
+                <div class="mb-3 text-start">
+                    <label class="form-label small fw-semibold text-muted" for="adminPasswordInput">Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control py-2" id="adminPasswordInput" placeholder="Enter password..." autocomplete="current-password" required autofocus>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" onclick="togglePasswordVisibility()" title="Show/Hide Password">👁️</button>
+                    </div>
+                    <div id="authError" class="text-danger small mt-2 d-none fw-semibold">
+                        ❌ Incorrect password. Please try again!
+                    </div>
+                </div>
+
+                <div class="form-check text-start mb-4">
+                    <input class="form-check-input" type="checkbox" id="rememberMeCheckbox">
+                    <label class="form-check-label small text-muted" for="rememberMeCheckbox">
+                        Remember me on this browser
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom w-100 py-2 fw-semibold mb-3 rounded-pill shadow-sm">
+                    Unlock Dashboard ✨
+                </button>
+
+                <div>
+                    <a href="index.html" class="text-decoration-none small text-muted">
+                        ← Return to Birthday Page
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Protected Dashboard App (Hidden until authenticated) -->
+    <div id="dashboardApp" style="display: none;">
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-sm navbar-custom mb-4">
+            <div class="container">
+                <span class="navbar-brand fw-bold fs-4">Birthday Dashboard 🎂</span>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="logoutAdmin()" title="Lock dashboard immediately">
+                        🔒 Lock Dashboard
+                    </button>
+                    <a href="index.html" class="nav-link d-flex align-items-center gap-1 ms-2">
+                        <span>←</span> Birthday Page
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container pb-5">
+
+        <div class="text-center mb-4">
+            <h1 class="fw-bold" style="color: var(--primary);">Birthday Dashboard 🎂</h1>
+            <p class="subtitle text-muted">Manage Nonty's Birthday Celebration</p>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- Stage Visibility Controls -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <span>🎯 Stage Mystery & Countdown Controls</span>
+                        <span class="badge bg-light text-dark fs-8">Auto & Manual</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Stage 1 -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <div class="fw-semibold">Stage 1 — Gift Reception 🎁</div>
+                                    <small class="text-muted">Always unlocked and visible</small>
+                                </div>
+                                <span class="badge badge-visible">Visible Now</span>
+                            </div>
+                        </div>
+
+                        <!-- Stage 2 -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="fw-semibold">Stage 2 — Friday Date 💕</div>
+                                    <small class="text-muted d-block">Hidden until countdown reaches zero, or manually unlocked</small>
+                                </div>
+                                <span id="stage2Badge" class="badge badge-hidden">Locked (Mystery)</span>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3 mb-2 border">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-check-label small fw-semibold" for="stage2Toggle">Manual Instant Unlock:</label>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="stage2Toggle" onchange="toggleStage('stage2')">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Countdown):</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="datetime-local" class="form-control" id="stage2UnlockTime" onchange="saveUnlockTime('stage2')">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="resetDefaultTime('stage2')">Reset Default</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="stage2Status" class="small text-muted mt-1">Checking countdown status...</div>
+                        </div>
+
+                        <!-- Stage 3 -->
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="fw-semibold">Stage 3 — Alexandria Adventure 🌊</div>
+                                    <small class="text-muted d-block">Hidden until countdown reaches zero, or manually unlocked</small>
+                                </div>
+                                <span id="stage3Badge" class="badge badge-hidden">Locked (Mystery)</span>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3 mb-2 border">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-check-label small fw-semibold" for="stage3Toggle">Manual Instant Unlock:</label>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="stage3Toggle" onchange="toggleStage('stage3')">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Countdown):</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="datetime-local" class="form-control" id="stage3UnlockTime" onchange="saveUnlockTime('stage3')">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="resetDefaultTime('stage3')">Reset Default</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="stage3Status" class="small text-muted mt-1">Checking countdown status...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header-custom">⚡ Quick Actions</div>
+                    <div class="card-body p-4 d-flex flex-column justify-content-center">
+                        <div class="d-flex flex-wrap gap-3 justify-content-center">
+                            <button class="btn btn-outline-custom quick-action-btn" onclick="openPasswordModal()">
+                                🔑 Change Password
+                            </button>
+                            <button class="btn btn-outline-custom quick-action-btn" onclick="previewSite()">
+                                👀 Preview Site
+                            </button>
+                            <button class="btn btn-outline-custom quick-action-btn" onclick="location.reload()">
+                                🔄 Refresh Dashboard
+                            </button>
+                            <button class="btn btn-danger quick-action-btn" onclick="resetAllData()">
+                                🗑️ Reset All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Gallery Manager -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <span>📸 Photo Gallery Manager</span>
+                        <span class="badge bg-light text-dark fs-8">Live On Site</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info py-2 px-3 mb-4 small d-flex align-items-center gap-2 rounded-3 border-0" style="background-color: #fcecef; color: #872e3a;">
+                            <span class="fs-5">💡</span>
+                            <div>
+                                <strong>Automatic Empty State:</strong> When no photos are listed here, the website automatically displays an elegant, romantic <strong>"Our Memories Are Coming Soon... 💕"</strong> placeholder card. When you add photos below, they will immediately show up in the gallery!
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Image URL</label>
+                                <input type="text" class="form-control" id="photoUrl" placeholder="https://example.com/photo.jpg">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Caption</label>
+                                <input type="text" class="form-control" id="photoCaption" placeholder="Photo caption...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Or Upload File</label>
+                                <input type="file" class="form-control" id="photoFile" accept="image/*">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button class="btn btn-primary-custom w-100" onclick="addPhoto()">Add Photo</button>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-semibold mb-3">Current Photos</h6>
+                        <div id="galleryList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RSVP Responses -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <span>💌 RSVP Responses</span>
+                        <button class="btn btn-sm btn-outline-light" onclick="clearRsvp()">Clear All Responses</button>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="rsvpList"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    </div> <!-- /#dashboardApp -->
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 18px; overflow: hidden;">
+                <div class="modal-header card-header-custom">
+                    <h5 class="modal-title fw-bold">🔑 Change Dashboard Password</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold" for="currPasswordInput">Current Password</label>
+                        <input type="password" class="form-control" id="currPasswordInput" placeholder="Enter current password...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold" for="newPasswordInput">New Password</label>
+                        <input type="password" class="form-control" id="newPasswordInput" placeholder="Enter new password...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold" for="confirmPasswordInput">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmPasswordInput" placeholder="Confirm new password...">
+                    </div>
+                    <div id="changePasswordError" class="text-danger small mb-2 d-none fw-semibold"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom rounded-pill px-4" onclick="saveNewPassword()">Save Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ── Helpers ──────────────────────────────────────────────
+
+        function showToast(message, type) {
+            type = type || 'success';
+            var bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : 'bg-warning text-dark';
+            var id = 'toast-' + Date.now();
+            var html = '<div id="' + id + '" class="toast align-items-center text-white ' + bgClass + ' border-0 mb-2" role="alert">' +
+                '<div class="d-flex">' +
+                '<div class="toast-body">' + message + '</div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+                '</div></div>';
+            document.getElementById('toastContainer').insertAdjacentHTML('beforeend', html);
+            var el = document.getElementById(id);
+            var toast = new bootstrap.Toast(el, { delay: 3000 });
+            toast.show();
+            el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            var d = new Date(ts);
+            return d.toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        // ── Authentication & Security ────────────────────────────
+
+        var DEFAULT_ADMIN_PASSWORD = 'Nova123pola';
+        var STORAGE_CUSTOM_PWD_KEY = 'birthday_admin_custom_pwd';
+        var SESSION_AUTH_KEY = 'birthday_admin_authenticated';
+        var STORAGE_REMEMBER_KEY = 'birthday_admin_remember';
+
+        function getAdminPassword() {
+            return localStorage.getItem(STORAGE_CUSTOM_PWD_KEY) || DEFAULT_ADMIN_PASSWORD;
+        }
+
+        function isAuthenticated() {
+            return sessionStorage.getItem(SESSION_AUTH_KEY) === 'true' ||
+                   localStorage.getItem(STORAGE_REMEMBER_KEY) === 'true';
+        }
+
+        function checkAdminAuthOnLoad() {
+            if (isAuthenticated()) {
+                showDashboard();
+            } else {
+                showAuthScreen();
+            }
+        }
+
+        function showAuthScreen() {
+            var authScreen = document.getElementById('authScreen');
+            var dashboardApp = document.getElementById('dashboardApp');
+            if (authScreen) authScreen.style.display = 'flex';
+            if (dashboardApp) dashboardApp.style.display = 'none';
+
+            var pwdInput = document.getElementById('adminPasswordInput');
+            if (pwdInput) {
+                pwdInput.value = '';
+                setTimeout(function () { pwdInput.focus(); }, 150);
+            }
+        }
+
+        function showDashboard() {
+            var authScreen = document.getElementById('authScreen');
+            var dashboardApp = document.getElementById('dashboardApp');
+            if (authScreen) authScreen.style.display = 'none';
+            if (dashboardApp) dashboardApp.style.display = 'block';
+
+            // Initialize Dashboard Data
+            loadStageToggles();
+            renderGallery();
+            renderRsvps();
+        }
+
+        function handleLogin(e) {
+            if (e) e.preventDefault();
+            var pwdInput = document.getElementById('adminPasswordInput');
+            var errorEl = document.getElementById('authError');
+            var authBox = document.getElementById('authBox');
+            var rememberMe = document.getElementById('rememberMeCheckbox');
+
+            var entered = (pwdInput ? pwdInput.value : '').trim();
+            var correct = getAdminPassword();
+
+            if (entered === correct) {
+                if (errorEl) errorEl.classList.add('d-none');
+                sessionStorage.setItem(SESSION_AUTH_KEY, 'true');
+                if (rememberMe && rememberMe.checked) {
+                    localStorage.setItem(STORAGE_REMEMBER_KEY, 'true');
+                } else {
+                    localStorage.removeItem(STORAGE_REMEMBER_KEY);
+                }
+                showToast('Welcome back! Dashboard unlocked ✨', 'success');
+                showDashboard();
+            } else {
+                if (errorEl) errorEl.classList.remove('d-none');
+                if (authBox) {
+                    authBox.classList.remove('shake');
+                    void authBox.offsetWidth; // trigger reflow
+                    authBox.classList.add('shake');
+                }
+                if (pwdInput) {
+                    pwdInput.value = '';
+                    pwdInput.focus();
+                }
+            }
+        }
+
+        function togglePasswordVisibility() {
+            var pwdInput = document.getElementById('adminPasswordInput');
+            var btn = document.getElementById('togglePasswordBtn');
+            if (!pwdInput) return;
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                pwdInput.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem(SESSION_AUTH_KEY);
+            localStorage.removeItem(STORAGE_REMEMBER_KEY);
+            showToast('Dashboard locked 🔒', 'warning');
+            showAuthScreen();
+        }
+
+        function openPasswordModal() {
+            var modalEl = document.getElementById('passwordModal');
+            if (!modalEl) return;
+            document.getElementById('currPasswordInput').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmPasswordInput').value = '';
+            var errorEl = document.getElementById('changePasswordError');
+            if (errorEl) errorEl.classList.add('d-none');
+            var modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        function saveNewPassword() {
+            var curr = (document.getElementById('currPasswordInput').value || '').trim();
+            var next = (document.getElementById('newPasswordInput').value || '').trim();
+            var confirm = (document.getElementById('confirmPasswordInput').value || '').trim();
+            var errorEl = document.getElementById('changePasswordError');
+
+            var actual = getAdminPassword();
+
+            if (curr !== actual) {
+                errorEl.textContent = '❌ Current password is incorrect.';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+            if (!next) {
+                errorEl.textContent = '❌ New password cannot be empty.';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+            if (next.length < 4) {
+                errorEl.textContent = '❌ Password should be at least 4 characters long.';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+            if (next !== confirm) {
+                errorEl.textContent = '❌ New password and confirmation do not match.';
+                errorEl.classList.remove('d-none');
+                return;
+            }
+
+            localStorage.setItem(STORAGE_CUSTOM_PWD_KEY, next);
+            errorEl.classList.add('d-none');
+
+            var modalEl = document.getElementById('passwordModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            showToast('Password successfully updated! 🔑', 'success');
+        }
+
+        // ── Stage Visibility & Countdown ─────────────────────────
+
+        function getDefaultUnlockTime(stage) {
+            return stage === 'stage2' ? '2026-10-30T19:00' : '2026-10-31T06:30';
+        }
+
+        function getUnlockTime(stage) {
+            return localStorage.getItem(stage + '_unlock_time') || getDefaultUnlockTime(stage);
+        }
+
+        function loadStageToggles() {
+            var s2Manual = localStorage.getItem('stage2_visible') === 'true';
+            var s3Manual = localStorage.getItem('stage3_visible') === 'true';
+
+            document.getElementById('stage2Toggle').checked = s2Manual;
+            document.getElementById('stage3Toggle').checked = s3Manual;
+
+            document.getElementById('stage2UnlockTime').value = getUnlockTime('stage2');
+            document.getElementById('stage3UnlockTime').value = getUnlockTime('stage3');
+
+            updateStageLiveStatus();
+        }
+
+        function updateStageLiveStatus() {
+            ['stage2', 'stage3'].forEach(function (stage) {
+                var isManual = localStorage.getItem(stage + '_visible') === 'true';
+                var isManualLocked = localStorage.getItem(stage + '_visible') === 'false';
+                var unlockTimeStr = getUnlockTime(stage);
+                var target = new Date(unlockTimeStr).getTime();
+                var diff = target - Date.now();
+                var isTimePassed = !isNaN(target) && diff <= 0;
+
+                var isUnlocked = isManual || (!isManualLocked && isTimePassed);
+
+                var badge = document.getElementById(stage + 'Badge');
+                var statusEl = document.getElementById(stage + 'Status');
+
+                if (isUnlocked) {
+                    badge.textContent = 'Unlocked & Visible';
+                    badge.className = 'badge badge-visible';
+                    if (isManual) {
+                        statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Manually Unlocked</span> (Overriding countdown timer)';
+                    } else {
+                        statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Automatically Unlocked</span> (Target time has passed)';
+                    }
+                } else {
+                    badge.textContent = 'Locked (Mystery Card)';
+                    badge.className = 'badge badge-hidden';
+
+                    if (isManualLocked) {
+                        statusEl.innerHTML = '<span class="text-danger fw-semibold">🔒 Manually Forced Locked</span>';
+                    } else if (!isNaN(target)) {
+                        var d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        var h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        var m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        var s = Math.floor((diff % (1000 * 60)) / 1000);
+                        var targetFormatted = new Date(unlockTimeStr).toLocaleString('en-US', {
+                            weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                        });
+                        statusEl.innerHTML = '⏳ <strong>Countdown active:</strong> Unlocks in <strong>' + d + 'd ' + h + 'h ' + m + 'm ' + s + 's</strong> (' + targetFormatted + ')';
+                    } else {
+                        statusEl.textContent = 'Waiting for valid date/time setting.';
+                    }
+                }
+            });
+        }
+
+        function toggleStage(stage) {
+            var checked = document.getElementById(stage + 'Toggle').checked;
+            localStorage.setItem(stage + '_visible', checked.toString());
+            updateStageLiveStatus();
+            var label = stage === 'stage2' ? 'Stage 2 (Friday Date)' : 'Stage 3 (Alexandria Trip)';
+            showToast(label + ' manual unlock is now ' + (checked ? 'ON (Visible)' : 'OFF (Using Countdown)') + '.', 'success');
+        }
+
+        function saveUnlockTime(stage) {
+            var val = document.getElementById(stage + 'UnlockTime').value;
+            if (!val) {
+                showToast('Please select a valid date and time.', 'danger');
+                return;
+            }
+            localStorage.setItem(stage + '_unlock_time', val);
+            // If it was forced unlocked manually, ask or let them know
+            updateStageLiveStatus();
+            showToast('Unlock time updated for ' + (stage === 'stage2' ? 'Stage 2' : 'Stage 3') + '!', 'success');
+        }
+
+        function resetDefaultTime(stage) {
+            var def = getDefaultUnlockTime(stage);
+            document.getElementById(stage + 'UnlockTime').value = def;
+            localStorage.setItem(stage + '_unlock_time', def);
+            updateStageLiveStatus();
+            showToast('Reset to default unlock time.', 'success');
+        }
+
+        // ── Photo Gallery ────────────────────────────────────────
+
+        function getPhotos() {
+            try { return JSON.parse(localStorage.getItem('gallery_photos')) || []; }
+            catch (e) { return []; }
+        }
+
+        function savePhotos(photos) {
+            localStorage.setItem('gallery_photos', JSON.stringify(photos));
+        }
+
+        function renderGallery() {
+            var photos = getPhotos();
+            var container = document.getElementById('galleryList');
+
+            if (photos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><span class="emoji">🖼️</span>No photos added yet.</div>';
+                return;
+            }
+
+            var html = '<div class="d-flex flex-column gap-2">';
+            photos.forEach(function (photo, i) {
+                html += '<div class="gallery-item d-flex align-items-center gap-3">' +
+                    '<img src="' + escapeAttr(photo.src) + '" alt="' + escapeAttr(photo.caption) + '" class="gallery-thumb" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22><rect fill=%22%23ddd%22 width=%2264%22 height=%2264%22/><text x=%2232%22 y=%2236%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2212%22>Error</text></svg>\'">' +
+                    '<div class="flex-grow-1">' +
+                    '<div class="fw-semibold">' + escapeHtml(photo.caption || '(No caption)') + '</div>' +
+                    '<small class="text-muted text-truncate d-block" style="max-width:300px;">' + escapeHtml(photo.src.substring(0, 60)) + (photo.src.length > 60 ? '…' : '') + '</small>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-outline-danger" onclick="deletePhoto(' + i + ')">Delete</button>' +
+                    '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function addPhoto() {
+            var urlInput = document.getElementById('photoUrl');
+            var captionInput = document.getElementById('photoCaption');
+            var fileInput = document.getElementById('photoFile');
+
+            var caption = captionInput.value.trim();
+
+            // Check for file upload first
+            if (fileInput.files && fileInput.files.length > 0) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var photos = getPhotos();
+                    photos.push({ src: e.target.result, caption: caption || fileInput.files[0].name });
+                    savePhotos(photos);
+                    renderGallery();
+                    showToast('Photo uploaded successfully!', 'success');
+                    urlInput.value = '';
+                    captionInput.value = '';
+                    fileInput.value = '';
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+                return;
+            }
+
+            var url = urlInput.value.trim();
+            if (!url) {
+                showToast('Please enter an image URL or upload a file.', 'danger');
+                return;
+            }
+
+            var photos = getPhotos();
+            photos.push({ src: url, caption: caption || 'Photo ' + (photos.length + 1) });
+            savePhotos(photos);
+            renderGallery();
+            showToast('Photo added successfully!', 'success');
+
+            urlInput.value = '';
+            captionInput.value = '';
+        }
+
+        function deletePhoto(index) {
+            var photos = getPhotos();
+            if (index < 0 || index >= photos.length) return;
+            var removed = photos.splice(index, 1);
+            savePhotos(photos);
+            renderGallery();
+            showToast('Photo "' + escapeHtml((removed[0] && removed[0].caption) || '') + '" deleted.', 'danger');
+        }
+
+        // ── RSVP Responses ───────────────────────────────────────
+
+        function getRsvps() {
+            try { return JSON.parse(localStorage.getItem('rsvp_responses')) || []; }
+            catch (e) { return []; }
+        }
+
+        function renderRsvps() {
+            var responses = getRsvps();
+            var container = document.getElementById('rsvpList');
+
+            if (responses.length === 0) {
+                container.innerHTML = '<div class="empty-state"><span class="emoji">💕</span>No responses yet. Waiting for Nonty to respond! 💕</div>';
+                return;
+            }
+
+            var html = '';
+            responses.forEach(function (r) {
+                var statusIcon = r.accepted ? '✅' : '❌';
+                var statusText = r.accepted ? 'Accepted' : 'Declined';
+
+                html += '<div class="rsvp-item">';
+                html += '<div class="d-flex justify-content-between align-items-start mb-2">';
+                html += '<div><span class="fs-5 me-2">' + statusIcon + '</span><strong>' + statusText + '</strong></div>';
+                html += '<small class="text-muted">' + formatTimestamp(r.timestamp) + '</small>';
+                html += '</div>';
+
+                if (r.note || r.text) {
+                    html += '<p class="mb-2">' + escapeHtml(r.note || r.text) + '</p>';
+                }
+
+                if (r.audioBase64) {
+                    html += '<div class="mt-2 p-2 bg-light rounded border">';
+                    html += '<div class="small fw-semibold text-muted mb-1">🎙️ Voice Recording:</div>';
+                    html += '<audio controls src="' + r.audioBase64 + '" class="w-100"></audio>';
+                    html += '<div class="mt-1"><a href="' + r.audioBase64 + '" download="nonty_voice_note.webm" class="btn btn-sm btn-link text-decoration-none p-0 text-primary fw-semibold">⬇️ Download Voice Note</a></div>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function clearRsvp() {
+            if (!confirm('Are you sure you want to clear all RSVP responses? This cannot be undone.')) return;
+            localStorage.removeItem('rsvp_responses');
+            renderRsvps();
+            showToast('All RSVP responses cleared.', 'danger');
+        }
+
+        // ── Quick Actions ────────────────────────────────────────
+
+        function previewSite() {
+            window.open('index.html', '_blank');
+        }
+
+        function resetAllData() {
+            if (!confirm('⚠️ This will erase ALL data (stages, photos, RSVPs, everything). Are you sure?')) return;
+            if (!confirm('Last chance — this is permanent. Continue?')) return;
+            var savedPwd = localStorage.getItem(STORAGE_CUSTOM_PWD_KEY);
+            var savedRemember = localStorage.getItem(STORAGE_REMEMBER_KEY);
+
+            localStorage.clear();
+
+            if (savedPwd) localStorage.setItem(STORAGE_CUSTOM_PWD_KEY, savedPwd);
+            if (savedRemember) localStorage.setItem(STORAGE_REMEMBER_KEY, savedRemember);
+
+            showToast('All data has been reset.', 'danger');
+            setTimeout(function () { location.reload(); }, 1000);
+        }
+
+        // ── Escaping Utilities ───────────────────────────────────
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ── Init ─────────────────────────────────────────────────
+
+        document.addEventListener('DOMContentLoaded', function () {
+            checkAdminAuthOnLoad();
+            setInterval(function () {
+                if (isAuthenticated()) {
+                    updateStageLiveStatus();
+                }
+            }, 1000);
+        });
+    </script>
+
+<script>
+window.addEventListener('load', function() {
+    console.log('--- TEST START ---');
+    console.log('Default password:', getAdminPassword());
+    
+    // Test check
+    var pwdInput = document.getElementById('adminPasswordInput');
+    pwdInput.value = 'Nova123pola';
+    handleLogin();
+    console.log('Is authenticated after Nova123pola:', isAuthenticated());
+    
+    // Test modal element
+    var modalEl = document.getElementById('passwordModal');
+    console.log('Modal element exists:', !!modalEl);
+    
+    // Test change password
+    document.getElementById('currPasswordInput').value = 'Nova123pola';
+    document.getElementById('newPasswordInput').value = 'NewSecret456';
+    document.getElementById('confirmPasswordInput').value = 'NewSecret456';
+    saveNewPassword();
+    console.log('Updated password:', getAdminPassword());
+    
+    // Revert
+    localStorage.removeItem(STORAGE_CUSTOM_PWD_KEY);
+    console.log('Reverted to default:', getAdminPassword());
+    console.log('--- TEST END ---');
+});
+</script>
+</body>
+</html>

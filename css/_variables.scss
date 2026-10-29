@@ -1,0 +1,32 @@
+// Variables
+
+// BS Custom Colors
+$primary    : #B84351;
+$primary-2  : #E2838C;
+$secondary  : #DFA4AB;
+$secondary-2: #FCF4F5;
+
+// BS Links
+$link-color: $primary;
+$link-decoration: none;
+$link-hover-color: $primary;
+$link-hover-decoration: underline;
+
+// BS Typography
+$font-family-base: 'Poppins', sans-serif;
+$font-family-alt: 'Kaushan Script', cursive;
+
+$h7-font-size: 0.9375rem;
+$h8-font-size: 0.875rem;
+$h9-font-size: 0.8125rem;
+$h10-font-size: 0.75rem;
+
+// Letter spacing
+$letter-spacers: (
+    1: 1px,
+    2: 2px,
+    3: 3px
+);
+
+// Navbar
+$navbar-height: 100px;
