@@ -30,10 +30,55 @@ function getStageUnlockTime(stageNum) {
 }
 
 /**
+ * Parses a datetime string (e.g. 'YYYY-MM-DDTHH:mm') strictly in Cairo, Egypt timezone (Africa/Cairo).
+ * Returns the exact UTC epoch millisecond timestamp so countdowns are 100% synchronized to Cairo time,
+ * regardless of the server's or client's local timezone.
+ */
+function parseCairoTimeToUtcMillis(cairoDateTimeStr) {
+  if (!cairoDateTimeStr) return NaN;
+  const cleanStr = String(cairoDateTimeStr).trim().replace(/Z|[+-]\d{2}:?\d{2}$/, '');
+  const [datePart, timePart = '00:00:00'] = cleanStr.split('T');
+  if (!datePart) return NaN;
+
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour = 0, min = 0, sec = 0] = timePart.split(':').map(Number);
+
+  const utcNominal = Date.UTC(year, month - 1, day, hour, min, sec);
+  if (isNaN(utcNominal)) return NaN;
+
+  try {
+    const d = new Date(utcNominal);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    }).formatToParts(d);
+
+    const map = {};
+    parts.forEach((p) => { map[p.type] = p.value; });
+    const cHour = parseInt(map.hour, 10) === 24 ? 0 : parseInt(map.hour, 10);
+    const cairoDateAtUtcNominal = Date.UTC(
+      parseInt(map.year, 10),
+      parseInt(map.month, 10) - 1,
+      parseInt(map.day, 10),
+      cHour,
+      parseInt(map.minute, 10),
+      parseInt(map.second, 10)
+    );
+    const offsetMillis = cairoDateAtUtcNominal - utcNominal;
+    return utcNominal - offsetMillis;
+  } catch (_) {
+    // Fallback to Egypt standard offset (UTC+2)
+    return utcNominal - (2 * 60 * 60 * 1000);
+  }
+}
+
+/**
  * Checks whether a stage is unlocked.
  * A stage is unlocked if:
  * 1. Manually forced visible via localStorage ('stageX_visible' === 'true')
- * 2. OR current time has passed the target unlock time (and not manually forced 'false')
+ * 2. OR current Cairo time has passed the target unlock time (and not manually forced 'false')
  */
 function isStageUnlocked(stageNum) {
   const manualVisible = localStorage.getItem('stage' + stageNum + '_visible');
@@ -43,7 +88,7 @@ function isStageUnlocked(stageNum) {
   const unlockTimeStr = getStageUnlockTime(stageNum);
   if (!unlockTimeStr) return false;
 
-  const target = new Date(unlockTimeStr).getTime();
+  const target = parseCairoTimeToUtcMillis(unlockTimeStr);
   if (isNaN(target)) return false;
 
   return Date.now() >= target;
@@ -183,7 +228,7 @@ function tickCountdowns() {
     const unlockTimeStr = getStageUnlockTime(stageNum);
     if (!unlockTimeStr) return;
 
-    const target = new Date(unlockTimeStr).getTime();
+    const target = parseCairoTimeToUtcMillis(unlockTimeStr);
     const diff = target - Date.now();
 
     if (diff <= 0) {
@@ -221,6 +266,29 @@ function startCountdownTicker() {
    ========================================================================= */
 
 /**
+ * Retrieves all gallery photos, combining shared repository photos
+ * with any local photos stored in localStorage.
+ */
+function getPhotos() {
+  const shared = (window.BIRTHDAY_DATA && Array.isArray(window.BIRTHDAY_DATA.gallery))
+    ? window.BIRTHDAY_DATA.gallery
+    : [];
+  let local = [];
+  try {
+    const stored = localStorage.getItem('gallery_photos');
+    if (stored) local = JSON.parse(stored);
+  } catch (_) {}
+
+  const all = [...shared];
+  local.forEach((p) => {
+    if (p && p.src && !all.some((x) => x.src === p.src)) {
+      all.push(p);
+    }
+  });
+  return all;
+}
+
+/**
  * Renders the photo gallery grid into #gallery-grid-container.
  * If no photos have been added yet, renders an elegant romantic placeholder
  * saying memories will be added soon.
@@ -229,13 +297,7 @@ function renderGallery() {
   const container = document.getElementById('gallery-grid-container');
   if (!container) return;
 
-  let photos = [];
-  try {
-    const stored = localStorage.getItem('gallery_photos');
-    if (stored) photos = JSON.parse(stored);
-  } catch (_) {
-    /* ignore malformed JSON */
-  }
+  const photos = getPhotos();
 
   // If no photos uploaded yet -> Show Romantic "Coming Soon" placeholder
   if (!photos || photos.length === 0) {

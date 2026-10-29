@@ -10,12 +10,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Anti-Cache Meta Tags (Forces fresh reload on mobile & desktop browsers) -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <meta name="description" content="">
     <meta name="keywords" content="">
 
-    <!-- Required CSS files -->
-    <link href="css/style.min.css" rel="stylesheet">
-    <link href="css/birthday-custom.css" rel="stylesheet">
+    <!-- Required CSS files with cache-busting -->
+    <link href="css/style.min.css?v=20261030b" rel="stylesheet">
+    <link href="css/birthday-custom.css?v=20261030b" rel="stylesheet">
 
     <!-- Favicon -->
     <link rel="icon" href="img/favicon-32x32.png" sizes="32x32" type="image/png">
@@ -645,11 +650,12 @@
     <!-- Footer End -->
 
 
-    <!-- Required JS files -->
-    <script src="js/script.min.js"></script>
-    <script src="js/birthday-app.js"></script>
-    <script src="js/birthday-hearts.js"></script>
-    <script src="js/birthday-music.js"></script>
+    <!-- Required JS files with cache-busting -->
+    <script src="js/birthday-data.js?v=20261030b"></script>
+    <script src="js/script.min.js?v=20261030b"></script>
+    <script src="js/birthday-app.js?v=20261030b"></script>
+    <script src="js/birthday-hearts.js?v=20261030b"></script>
+    <script src="js/birthday-music.js?v=20261030b"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1b48c3e7512f4f2ab2ec89154e3bef72","r":1,"spa":2}' crossorigin="anonymous"></script>
 </body>
 

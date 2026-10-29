@@ -4,6 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Birthday Dashboard 🎂</title>
+
+    <!-- Anti-Cache Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
@@ -275,7 +281,12 @@
 
         <div class="text-center mb-4">
             <h1 class="fw-bold" style="color: var(--primary);">Birthday Dashboard 🎂</h1>
-            <p class="subtitle text-muted">Manage Nonty's Birthday Celebration</p>
+            <p class="subtitle text-muted mb-2">Manage Nonty's Birthday Celebration</p>
+            <div class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1 rounded-pill shadow-sm border" style="border-color: #F0CCD1 !important;">
+                <span class="fs-6">🇪🇬</span>
+                <span class="small fw-semibold" style="color: var(--primary);">Cairo Time:</span>
+                <span id="cairoLiveClock" class="small fw-bold text-dark font-monospace">--:--:--</span>
+            </div>
         </div>
 
         <div class="row g-4">
@@ -317,7 +328,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Countdown):</label>
+                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Cairo Time 🇪🇬):</label>
                                     <div class="input-group input-group-sm">
                                         <input type="datetime-local" class="form-control" id="stage2UnlockTime" onchange="saveUnlockTime('stage2')">
                                         <button class="btn btn-outline-secondary" type="button" onclick="resetDefaultTime('stage2')">Reset Default</button>
@@ -345,7 +356,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Countdown):</label>
+                                    <label class="form-label small text-muted mb-1 d-block">Auto Unlock Date & Time (Cairo Time 🇪🇬):</label>
                                     <div class="input-group input-group-sm">
                                         <input type="datetime-local" class="form-control" id="stage3UnlockTime" onchange="saveUnlockTime('stage3')">
                                         <button class="btn btn-outline-secondary" type="button" onclick="resetDefaultTime('stage3')">Reset Default</button>
@@ -384,15 +395,23 @@
             <!-- Photo Gallery Manager -->
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span>📸 Photo Gallery Manager</span>
-                        <span class="badge bg-light text-dark fs-8">Live On Site</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="exportPhotosToJson()" title="Download birthday-data.js with all current photos">
+                                📤 Save Photos for Everyone (Download File)
+                            </button>
+                            <span class="badge bg-light text-dark fs-8">Public Sync</span>
+                        </div>
                     </div>
                     <div class="card-body p-4">
-                        <div class="alert alert-info py-2 px-3 mb-4 small d-flex align-items-center gap-2 rounded-3 border-0" style="background-color: #fcecef; color: #872e3a;">
-                            <span class="fs-5">💡</span>
-                            <div>
-                                <strong>Automatic Empty State:</strong> When no photos are listed here, the website automatically displays an elegant, romantic <strong>"Our Memories Are Coming Soon... 💕"</strong> placeholder card. When you add photos below, they will immediately show up in the gallery!
+                        <div class="alert alert-info py-3 px-3 mb-4 small rounded-3 border-0" style="background-color: #fcecef; color: #872e3a;">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="fs-5">💡</span>
+                                <div>
+                                    <strong>How to make photos appear for everyone:</strong>
+                                    Photos you add below are previewed immediately. To make them appear on Nonty's phone and for all visitors on GitHub Pages, click <strong class="text-decoration-underline">"Save Photos for Everyone"</strong> above to download <code>birthday-data.js</code>, place it in the <code>js/</code> folder, and do <code>git push</code>. It will show up for everyone permanently!
+                                </div>
                             </div>
                         </div>
 
@@ -473,6 +492,8 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Shared Birthday Data -->
+    <script src="js/birthday-data.js?v=20261030b"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // ── Helpers ──────────────────────────────────────────────
@@ -496,10 +517,18 @@
         function formatTimestamp(ts) {
             if (!ts) return '';
             var d = new Date(ts);
-            return d.toLocaleDateString('en-US', {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
+            try {
+                return new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Africa/Cairo',
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                }).format(d) + ' (Cairo 🇪🇬)';
+            } catch (_) {
+                return d.toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
         }
 
         // ── Authentication & Security ────────────────────────────
@@ -656,6 +685,59 @@
             showToast('Password successfully updated! 🔑', 'success');
         }
 
+        // ── Cairo, Egypt Time Synchronization ────────────────────
+
+        function parseCairoTimeToUtcMillis(cairoDateTimeStr) {
+            if (!cairoDateTimeStr) return NaN;
+            var cleanStr = String(cairoDateTimeStr).trim().replace(/Z|[+-]\d{2}:?\d{2}$/, '');
+            var parts = cleanStr.split('T');
+            if (!parts[0]) return NaN;
+            var dateParts = parts[0].split('-').map(Number);
+            var timeParts = (parts[1] || '00:00:00').split(':').map(Number);
+
+            var utcNominal = Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0);
+            if (isNaN(utcNominal)) return NaN;
+
+            try {
+                var d = new Date(utcNominal);
+                var formatted = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Africa/Cairo',
+                    year: 'numeric', month: 'numeric', day: 'numeric',
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
+                    hour12: false
+                }).formatToParts(d);
+
+                var map = {};
+                formatted.forEach(function (p) { map[p.type] = p.value; });
+                var cHour = parseInt(map.hour, 10) === 24 ? 0 : parseInt(map.hour, 10);
+                var cairoDateAtUtcNominal = Date.UTC(
+                    parseInt(map.year, 10),
+                    parseInt(map.month, 10) - 1,
+                    parseInt(map.day, 10),
+                    cHour,
+                    parseInt(map.minute, 10),
+                    parseInt(map.second, 10)
+                );
+                var offsetMillis = cairoDateAtUtcNominal - utcNominal;
+                return utcNominal - offsetMillis;
+            } catch (_) {
+                return utcNominal - (2 * 60 * 60 * 1000);
+            }
+        }
+
+        function updateCairoLiveClock() {
+            var el = document.getElementById('cairoLiveClock');
+            if (!el) return;
+            try {
+                el.textContent = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Africa/Cairo',
+                    weekday: 'short', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: true
+                }).format(new Date());
+            } catch (_) {}
+        }
+
         // ── Stage Visibility & Countdown ─────────────────────────
 
         function getDefaultUnlockTime(stage) {
@@ -684,7 +766,7 @@
                 var isManual = localStorage.getItem(stage + '_visible') === 'true';
                 var isManualLocked = localStorage.getItem(stage + '_visible') === 'false';
                 var unlockTimeStr = getUnlockTime(stage);
-                var target = new Date(unlockTimeStr).getTime();
+                var target = parseCairoTimeToUtcMillis(unlockTimeStr);
                 var diff = target - Date.now();
                 var isTimePassed = !isNaN(target) && diff <= 0;
 
@@ -699,7 +781,7 @@
                     if (isManual) {
                         statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Manually Unlocked</span> (Overriding countdown timer)';
                     } else {
-                        statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Automatically Unlocked</span> (Target time has passed)';
+                        statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Automatically Unlocked</span> (Cairo target time reached)';
                     }
                 } else {
                     badge.textContent = 'Locked (Mystery Card)';
@@ -712,10 +794,17 @@
                         var h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                         var m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         var s = Math.floor((diff % (1000 * 60)) / 1000);
-                        var targetFormatted = new Date(unlockTimeStr).toLocaleString('en-US', {
-                            weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-                        });
-                        statusEl.innerHTML = '⏳ <strong>Countdown active:</strong> Unlocks in <strong>' + d + 'd ' + h + 'h ' + m + 'm ' + s + 's</strong> (' + targetFormatted + ')';
+                        var targetFormatted = '';
+                        try {
+                            targetFormatted = new Intl.DateTimeFormat('en-US', {
+                                timeZone: 'Africa/Cairo',
+                                weekday: 'short', month: 'short', day: 'numeric',
+                                hour: 'numeric', minute: '2-digit', hour12: true
+                            }).format(new Date(target));
+                        } catch (_) {
+                            targetFormatted = new Date(unlockTimeStr).toLocaleString('en-US');
+                        }
+                        statusEl.innerHTML = '⏳ <strong>Cairo Countdown active:</strong> Unlocks in <strong>' + d + 'd ' + h + 'h ' + m + 'm ' + s + 's</strong> (' + targetFormatted + ')';
                     } else {
                         statusEl.textContent = 'Waiting for valid date/time setting.';
                     }
@@ -754,8 +843,45 @@
         // ── Photo Gallery ────────────────────────────────────────
 
         function getPhotos() {
-            try { return JSON.parse(localStorage.getItem('gallery_photos')) || []; }
-            catch (e) { return []; }
+            var shared = (window.BIRTHDAY_DATA && Array.isArray(window.BIRTHDAY_DATA.gallery))
+                ? window.BIRTHDAY_DATA.gallery
+                : [];
+            var local = [];
+            try {
+                var stored = localStorage.getItem('gallery_photos');
+                if (stored) local = JSON.parse(stored);
+            } catch (_) {}
+
+            var all = [...shared];
+            local.forEach(function (p) {
+                if (p && p.src && !all.some(function (x) { return x.src === p.src; })) {
+                    all.push(p);
+                }
+            });
+            return all;
+        }
+
+        function exportPhotosToJson() {
+            var photos = getPhotos();
+            if (photos.length === 0) {
+                showToast('No photos to export yet. Add photos first below!', 'warning');
+                return;
+            }
+            var jsCode = '/**\n * Shared Birthday Celebration Data — Happy Birthday Nonty 🎂\n */\n\nwindow.BIRTHDAY_DATA = {\n  gallery: ' +
+                JSON.stringify(photos, null, 2) +
+                ',\n  stages: {\n    stage2_unlock_time: "' + getUnlockTime('stage2') + '",\n    stage3_unlock_time: "' + getUnlockTime('stage3') + '"\n  }\n};\n';
+
+            var blob = new Blob([jsCode], { type: 'application/javascript;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'birthday-data.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Downloaded birthday-data.js! Replace js/birthday-data.js with it and do git push so everyone sees the photos! 🚀', 'success');
         }
 
         function savePhotos(photos) {
@@ -926,7 +1052,9 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             checkAdminAuthOnLoad();
+            updateCairoLiveClock();
             setInterval(function () {
+                updateCairoLiveClock();
                 if (isAuthenticated()) {
                     updateStageLiveStatus();
                 }
