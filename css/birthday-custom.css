@@ -621,3 +621,156 @@ section,
     0% { transform: translateY(0) rotate(-4deg) scale(0.95); }
     100% { transform: translateY(-14px) rotate(6deg) scale(1.1); }
 }
+
+/* =========================================================================
+   6. BACKGROUND MUSIC PLAYER CONTROLLER
+   ========================================================================= */
+
+.music-player-widget {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 999;
+}
+
+.music-toggle-btn {
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(184, 67, 81, 0.28);
+    border-radius: 50px;
+    padding: 10px 18px 10px 14px;
+    color: #B84351;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(184, 67, 81, 0.16);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.music-toggle-btn:hover {
+    transform: translateY(-3px);
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(184, 67, 81, 0.26);
+    border-color: rgba(184, 67, 81, 0.45);
+}
+
+.music-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+/* Rotating Disc Icon */
+.music-disc-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #B84351 0%, #D75A68 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(184, 67, 81, 0.3);
+    transition: transform 0.4s ease, background 0.3s ease;
+}
+
+.music-player-widget.is-playing .music-disc-icon {
+    animation: spinDisc 3.5s linear infinite;
+}
+
+@keyframes spinDisc {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Dancing Equalizer Bars */
+.music-wave-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 16px;
+}
+
+.music-wave-bars .bar {
+    width: 3px;
+    background-color: #B84351;
+    border-radius: 3px;
+    height: 4px;
+    transition: height 0.2s ease, background-color 0.3s ease;
+}
+
+.music-player-widget.is-playing .bar-1 {
+    animation: barDance 0.9s ease-in-out infinite alternate;
+}
+.music-player-widget.is-playing .bar-2 {
+    animation: barDance 0.7s ease-in-out 0.2s infinite alternate;
+}
+.music-player-widget.is-playing .bar-3 {
+    animation: barDance 1.1s ease-in-out 0.4s infinite alternate;
+}
+.music-player-widget.is-playing .bar-4 {
+    animation: barDance 0.8s ease-in-out 0.1s infinite alternate;
+}
+
+@keyframes barDance {
+    0% { height: 4px; }
+    50% { height: 16px; }
+    100% { height: 8px; }
+}
+
+/* Paused State */
+.music-player-widget.is-paused .music-disc-icon {
+    background: #e2e2e2;
+    color: #777;
+    box-shadow: none;
+}
+
+.music-player-widget.is-paused .bar {
+    background-color: #bbb;
+    height: 3px !important;
+    animation: none !important;
+}
+
+.music-player-widget.is-paused .music-status-text {
+    color: #888;
+}
+
+/* Autoplay Pending Pulse (Inviting first tap) */
+.music-player-widget.pending-interaction .music-toggle-btn {
+    animation: pulseInvite 2s infinite ease-in-out;
+    border-color: #B84351;
+}
+
+@keyframes pulseInvite {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(184, 67, 81, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(184, 67, 81, 0);
+    }
+}
+
+/* Responsive for Mobile */
+@media (max-width: 576px) {
+    .music-player-widget {
+        bottom: 18px;
+        left: 14px;
+    }
+    .music-toggle-btn {
+        padding: 8px 14px 8px 10px;
+        font-size: 0.82rem;
+        gap: 7px;
+    }
+    .music-disc-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+    }
+    .music-wave-bars {
+        height: 14px;
+    }
+}
