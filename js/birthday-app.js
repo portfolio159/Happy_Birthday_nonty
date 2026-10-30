@@ -9,6 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGallery();
   initVoiceRecorder();
   initRSVPForm();
+
+  // Cloud Realtime Synchronization via Firebase
+  if (window.BirthdayFirebase) {
+    window.BirthdayFirebase.listenStages((cloudStages) => {
+      renderStages();
+    });
+
+    window.BirthdayFirebase.listenGallery((cloudPhotos) => {
+      renderGallery(cloudPhotos);
+    });
+  }
 });
 
 /* =========================================================================
@@ -293,11 +304,13 @@ function getPhotos() {
  * If no photos have been added yet, renders an elegant romantic placeholder
  * saying memories will be added soon.
  */
-function renderGallery() {
+function renderGallery(photosOverride) {
   const container = document.getElementById('gallery-grid-container');
   if (!container) return;
 
-  const photos = getPhotos();
+  const photos = (Array.isArray(photosOverride) && photosOverride.length > 0)
+    ? photosOverride
+    : getPhotos();
 
   // If no photos uploaded yet -> Show Romantic "Coming Soon" placeholder
   if (!photos || photos.length === 0) {
@@ -557,6 +570,12 @@ function initRSVPForm() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const submitBtn = form.querySelector('.rsvp-submit-btn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Sending with love... 💌</span>';
+    }
+
     const acceptedEl = document.getElementById('rsvp-accept-check');
     const noteEl = document.getElementById('rsvp-note');
 
@@ -577,6 +596,7 @@ function initRSVPForm() {
       timestamp: new Date().toISOString(),
     };
 
+    // 1. Save to local storage as fallback
     let responses = [];
     try {
       const stored = localStorage.getItem('rsvp_responses');
@@ -586,6 +606,15 @@ function initRSVPForm() {
     }
     responses.push(entry);
     localStorage.setItem('rsvp_responses', JSON.stringify(responses));
+
+    // 2. Real-time Cloud Sync to Firebase Firestore
+    if (window.BirthdayFirebase) {
+      try {
+        await window.BirthdayFirebase.submitRSVPCloud(entry);
+      } catch (cloudErr) {
+        console.warn('[RSVP] Cloud Firestore sync warning:', cloudErr);
+      }
+    }
 
     // Smooth transition: Hide form, show celebration card
     form.classList.add('d-none');

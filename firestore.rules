@@ -1,0 +1,153 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Application: Nonty's Birthday Celebration Web App (nonty-birthday-2026)
+// Architecture: GitHub Pages static client with client-side passcode authentication.
+//
+// Collection: settings
+// Document ID: stages (or any configuration document key)
+// Fields:
+//   - stage1_visible: bool (optional) - Manual unlock override for Stage 1
+//   - stage2_visible: bool (optional) - Manual unlock override for Stage 2
+//   - stage3_visible: bool (optional) - Manual unlock override for Stage 3
+//   - stage1_unlock_time: string (optional, 5-50 chars) - ISO datetime string for Stage 1
+//   - stage2_unlock_time: string (optional, 5-50 chars) - ISO datetime string for Stage 2
+//   - stage3_unlock_time: string (optional, 5-50 chars) - ISO datetime string for Stage 3
+//   - updatedAt: timestamp|number|string (optional) - Timestamp of setting change
+//
+// Collection: gallery
+// Document ID: photoId (auto-generated or custom)
+// Fields:
+//   - src: string (required or url, 1-800000 chars) - Image URL or base64 data URI (FileReader)
+//   - url: string (optional, 1-800000 chars) - Image URL alias / base64 data URI
+//   - caption: string (optional, max 500 chars) - Caption for the celebration photo
+//   - createdAt: timestamp|number|string (optional) - Time photo was added
+//   - order: number (optional, >= 0) - Display order
+//
+// Collection: rsvp
+// Document ID: rsvpId (auto-generated)
+// Fields:
+//   - note: string (optional, max 2000 chars) - Birthday response note from Nonty
+//   - accepted: bool (required) - Acceptance status of the date invitation
+//   - audioBase64: string|null (optional, max 800000 chars) - Base64 audio snippet recording
+//   - timestamp: timestamp|number|string (optional/required) - Response timestamp
+//   - cairoTime: string (optional, max 100 chars) - Cairo local display time string
+//   - text: string (optional, max 2000 chars) - Note text alias
+//   - createdAt: timestamp|number|string (optional) - Server or client creation time
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Verify document only contains allowed field keys
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate flexible timestamp representations (Firestore Timestamp, numeric ms, or ISO string)
+    function isValidFlexibleTimestamp(field) {
+      return !(field in request.resource.data) ||
+        request.resource.data[field] is timestamp ||
+        (request.resource.data[field] is number && request.resource.data[field] > 0) ||
+        (request.resource.data[field] is string && request.resource.data[field].size() <= 50);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    // Validator for settings/stages document
+    function isValidStages(data) {
+      let allowedKeys = [
+        'stage1_visible', 'stage2_visible', 'stage3_visible',
+        'stage1_unlock_time', 'stage2_unlock_time', 'stage3_unlock_time',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        (!('stage1_visible' in data) || data.stage1_visible is bool) &&
+        (!('stage2_visible' in data) || data.stage2_visible is bool) &&
+        (!('stage3_visible' in data) || data.stage3_visible is bool) &&
+        (!('stage1_unlock_time' in data) || (data.stage1_unlock_time is string && data.stage1_unlock_time.size() >= 5 && data.stage1_unlock_time.size() <= 50)) &&
+        (!('stage2_unlock_time' in data) || (data.stage2_unlock_time is string && data.stage2_unlock_time.size() >= 5 && data.stage2_unlock_time.size() <= 50)) &&
+        (!('stage3_unlock_time' in data) || (data.stage3_unlock_time is string && data.stage3_unlock_time.size() >= 5 && data.stage3_unlock_time.size() <= 50)) &&
+        isValidFlexibleTimestamp('updatedAt');
+    }
+
+    // Validator for gallery photos (supports base64 data URIs up to 800KB)
+    function isValidGalleryPhoto(data) {
+      let allowedKeys = ['src', 'url', 'caption', 'createdAt', 'order'];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        (('src' in data && data.src is string && data.src.size() > 0 && data.src.size() <= 800000) ||
+         ('url' in data && data.url is string && data.url.size() > 0 && data.url.size() <= 800000)) &&
+        (!('caption' in data) || (data.caption is string && data.caption.size() <= 500)) &&
+        (!('order' in data) || (data.order is number && data.order >= 0)) &&
+        isValidFlexibleTimestamp('createdAt');
+    }
+
+    // Validator for RSVP responses
+    function isValidRsvp(data) {
+      let allowedKeys = ['note', 'text', 'accepted', 'audioBase64', 'timestamp', 'cairoTime', 'createdAt'];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        ('accepted' in data && data.accepted is bool) &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 2000)) &&
+        (!('text' in data) || (data.text is string && data.text.size() <= 2000)) &&
+        (!('audioBase64' in data) || data.audioBase64 == null || (data.audioBase64 is string && data.audioBase64.size() <= 800000)) &&
+        (!('cairoTime' in data) || (data.cairoTime is string && data.cairoTime.size() <= 100)) &&
+        (!('timestamp' in data) || data.timestamp is timestamp || (data.timestamp is number && data.timestamp > 0) || (data.timestamp is string && data.timestamp.size() <= 50)) &&
+        isValidFlexibleTimestamp('createdAt');
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // 1. Settings Collection (Countdown times and Stage Unlock status)
+    match /settings/{doc} {
+      // Publicly readable so visitors see stage status and countdown timers
+      allow read: if true;
+
+      // Writable by admin/client with strict schema validation
+      allow create, update: if isValidStages(request.resource.data);
+
+      // Disallow deletion of critical settings documents
+      allow delete: if false;
+    }
+
+    // 2. Photo Gallery Collection
+    match /gallery/{photoId} {
+      // Publicly readable for romantic photo display
+      allow read: if true;
+
+      // Writable with photo schema validation (supports URLs and base64 data URIs)
+      allow create, update: if isValidGalleryPhoto(request.resource.data);
+
+      // Admin can delete photos from gallery
+      allow delete: if true;
+    }
+
+    // 3. RSVP Responses Collection
+    match /rsvp/{rsvpId} {
+      // Admin can view and delete submitted responses
+      allow read, delete: if true;
+
+      // Publicly creatable with strict payload size and type checks
+      allow create: if isValidRsvp(request.resource.data);
+
+      // Submitted RSVPs cannot be modified or tampered with
+      allow update: if false;
+    }
+
+    // Default Deny: Deny all reads and writes by default across any other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

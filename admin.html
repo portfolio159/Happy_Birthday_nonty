@@ -264,7 +264,10 @@
         <!-- Navbar -->
         <nav class="navbar navbar-expand-sm navbar-custom mb-4">
             <div class="container">
-                <span class="navbar-brand fw-bold fs-4">Birthday Dashboard 🎂</span>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-brand fw-bold fs-4 m-0">Birthday Dashboard 🎂</span>
+                    <span id="cloudStatusBadge" class="badge rounded-pill bg-light text-dark px-3 py-1 ms-2 fs-8 align-middle">☁️ Cloud Sync Active</span>
+                </div>
                 <div class="d-flex align-items-center gap-2 ms-auto">
                     <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="logoutAdmin()" title="Lock dashboard immediately">
                         🔒 Lock Dashboard
@@ -398,19 +401,19 @@
                     <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span>📸 Photo Gallery Manager</span>
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="exportPhotosToJson()" title="Download birthday-data.js with all current photos">
-                                📤 Save Photos for Everyone (Download File)
+                            <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="exportPhotosToJson()" title="Download birthday-data.js as offline backup">
+                                📤 Download Offline Backup (birthday-data.js)
                             </button>
                             <span class="badge bg-light text-dark fs-8">Public Sync</span>
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <div class="alert alert-info py-3 px-3 mb-4 small rounded-3 border-0" style="background-color: #fcecef; color: #872e3a;">
+                        <div class="alert alert-success py-3 px-3 mb-4 small rounded-3 border-0" style="background-color: #e8f5e9; color: #1b5e20;">
                             <div class="d-flex align-items-start gap-2">
-                                <span class="fs-5">💡</span>
+                                <span class="fs-5">☁️</span>
                                 <div>
-                                    <strong>How to make photos appear for everyone:</strong>
-                                    Photos you add below are previewed immediately. To make them appear on Nonty's phone and for all visitors on GitHub Pages, click <strong class="text-decoration-underline">"Save Photos for Everyone"</strong> above to download <code>birthday-data.js</code>, place it in the <code>js/</code> folder, and do <code>git push</code>. It will show up for everyone permanently!
+                                    <strong>Real-Time Cloud Sync Active:</strong>
+                                    Any photo you upload or add here is instantly saved to Cloud Firestore and appears live on Nonty's phone and on all devices! You can also click <strong class="text-decoration-underline">"Download Offline Backup File"</strong> above to keep a git backup if you wish.
                                 </div>
                             </div>
                         </div>
@@ -493,8 +496,13 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Shared Birthday Data -->
-    <script src="js/birthday-data.js?v=20261030b"></script>
+    <script src="js/birthday-data.js?v=20261030c"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase Cloud Sync SDKs (v10.12.0 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="js/birthday-firebase.js?v=20261030c"></script>
     <script>
         // ── Helpers ──────────────────────────────────────────────
 
@@ -568,6 +576,9 @@
             }
         }
 
+        var currentCloudPhotos = null;
+        var currentCloudRsvps = null;
+
         function showDashboard() {
             var authScreen = document.getElementById('authScreen');
             var dashboardApp = document.getElementById('dashboardApp');
@@ -578,6 +589,32 @@
             loadStageToggles();
             renderGallery();
             renderRsvps();
+
+            // Connect Real-Time Cloud Listeners via Firebase
+            if (window.BirthdayFirebase) {
+                var badge = document.getElementById('cloudStatusBadge');
+                if (badge) {
+                    badge.textContent = '☁️ Cloud Sync Active (Live)';
+                    badge.className = 'badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1 ms-2 fs-8 align-middle';
+                }
+
+                // Listen to Stages Changes in Cloud
+                window.BirthdayFirebase.listenStages(function (cloudStages) {
+                    loadStageToggles();
+                });
+
+                // Listen to Photo Gallery Changes in Cloud
+                window.BirthdayFirebase.listenGallery(function (cloudPhotos) {
+                    currentCloudPhotos = cloudPhotos;
+                    renderGallery(cloudPhotos);
+                });
+
+                // Listen to RSVP Submissions in Cloud
+                window.BirthdayFirebase.listenRSVPs(function (cloudRsvps) {
+                    currentCloudRsvps = cloudRsvps;
+                    renderRsvps(cloudRsvps);
+                });
+            }
         }
 
         function handleLogin(e) {
@@ -812,12 +849,26 @@
             });
         }
 
+        function syncStagesToCloud() {
+            if (window.BirthdayFirebase) {
+                window.BirthdayFirebase.saveStagesCloud({
+                    stage2_visible: localStorage.getItem('stage2_visible') === 'true',
+                    stage3_visible: localStorage.getItem('stage3_visible') === 'true',
+                    stage2_unlock_time: getUnlockTime('stage2'),
+                    stage3_unlock_time: getUnlockTime('stage3')
+                }).then(function (ok) {
+                    if (ok) console.log('[Admin] Stages synced to cloud');
+                });
+            }
+        }
+
         function toggleStage(stage) {
             var checked = document.getElementById(stage + 'Toggle').checked;
             localStorage.setItem(stage + '_visible', checked.toString());
             updateStageLiveStatus();
+            syncStagesToCloud();
             var label = stage === 'stage2' ? 'Stage 2 (Friday Date)' : 'Stage 3 (Alexandria Trip)';
-            showToast(label + ' manual unlock is now ' + (checked ? 'ON (Visible)' : 'OFF (Using Countdown)') + '.', 'success');
+            showToast(label + ' manual unlock is now ' + (checked ? 'ON (Visible)' : 'OFF (Using Countdown)') + ' & synced to Cloud! ☁️', 'success');
         }
 
         function saveUnlockTime(stage) {
@@ -827,9 +878,9 @@
                 return;
             }
             localStorage.setItem(stage + '_unlock_time', val);
-            // If it was forced unlocked manually, ask or let them know
             updateStageLiveStatus();
-            showToast('Unlock time updated for ' + (stage === 'stage2' ? 'Stage 2' : 'Stage 3') + '!', 'success');
+            syncStagesToCloud();
+            showToast('Unlock time updated for ' + (stage === 'stage2' ? 'Stage 2' : 'Stage 3') + ' & synced to Cloud! ☁️', 'success');
         }
 
         function resetDefaultTime(stage) {
@@ -837,12 +888,50 @@
             document.getElementById(stage + 'UnlockTime').value = def;
             localStorage.setItem(stage + '_unlock_time', def);
             updateStageLiveStatus();
-            showToast('Reset to default unlock time.', 'success');
+            syncStagesToCloud();
+            showToast('Reset to default unlock time & synced to Cloud! ☁️', 'success');
         }
 
         // ── Photo Gallery ────────────────────────────────────────
 
+        function compressImageFile(file, maxDim, quality) {
+            maxDim = maxDim || 1200;
+            quality = quality || 0.82;
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = new Image();
+                    img.onload = function () {
+                        var w = img.width;
+                        var h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        var canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        var ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         function getPhotos() {
+            if (Array.isArray(currentCloudPhotos) && currentCloudPhotos.length > 0) {
+                return currentCloudPhotos;
+            }
             var shared = (window.BIRTHDAY_DATA && Array.isArray(window.BIRTHDAY_DATA.gallery))
                 ? window.BIRTHDAY_DATA.gallery
                 : [];
@@ -881,28 +970,33 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast('Downloaded birthday-data.js! Replace js/birthday-data.js with it and do git push so everyone sees the photos! 🚀', 'success');
+            showToast('Downloaded birthday-data.js! Replace js/birthday-data.js with it and do git push! 🚀', 'success');
         }
 
         function savePhotos(photos) {
             localStorage.setItem('gallery_photos', JSON.stringify(photos));
         }
 
-        function renderGallery() {
-            var photos = getPhotos();
+        function renderGallery(photosOverride) {
+            var photos = (Array.isArray(photosOverride) && photosOverride.length > 0)
+                ? photosOverride
+                : getPhotos();
             var container = document.getElementById('galleryList');
 
-            if (photos.length === 0) {
-                container.innerHTML = '<div class="empty-state"><span class="emoji">🖼️</span>No photos added yet.</div>';
+            if (!photos || photos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><span class="emoji">🖼️</span>No photos added yet. Upload photos below to display for everyone!</div>';
                 return;
             }
 
             var html = '<div class="d-flex flex-column gap-2">';
             photos.forEach(function (photo, i) {
+                var isCloud = Boolean(photo.id);
+                var badge = isCloud ? '<span class="badge bg-success-subtle text-success border border-success-subtle fs-8 py-0 px-2 ms-2">Cloud ☁️</span>' : '';
+
                 html += '<div class="gallery-item d-flex align-items-center gap-3">' +
                     '<img src="' + escapeAttr(photo.src) + '" alt="' + escapeAttr(photo.caption) + '" class="gallery-thumb" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22><rect fill=%22%23ddd%22 width=%2264%22 height=%2264%22/><text x=%2232%22 y=%2236%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2212%22>Error</text></svg>\'">' +
                     '<div class="flex-grow-1">' +
-                    '<div class="fw-semibold">' + escapeHtml(photo.caption || '(No caption)') + '</div>' +
+                    '<div class="fw-semibold">' + escapeHtml(photo.caption || '(No caption)') + badge + '</div>' +
                     '<small class="text-muted text-truncate d-block" style="max-width:300px;">' + escapeHtml(photo.src.substring(0, 60)) + (photo.src.length > 60 ? '…' : '') + '</small>' +
                     '</div>' +
                     '<button class="btn btn-sm btn-outline-danger" onclick="deletePhoto(' + i + ')">Delete</button>' +
@@ -912,7 +1006,7 @@
             container.innerHTML = html;
         }
 
-        function addPhoto() {
+        async function addPhoto() {
             var urlInput = document.getElementById('photoUrl');
             var captionInput = document.getElementById('photoCaption');
             var fileInput = document.getElementById('photoFile');
@@ -921,18 +1015,34 @@
 
             // Check for file upload first
             if (fileInput.files && fileInput.files.length > 0) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
+                showToast('Uploading & syncing photo to Cloud... ⏳', 'warning');
+                try {
+                    var dataUrl = await compressImageFile(fileInput.files[0]);
+                    var photoObj = { src: dataUrl, caption: caption || fileInput.files[0].name };
+
+                    // Save local backup
                     var photos = getPhotos();
-                    photos.push({ src: e.target.result, caption: caption || fileInput.files[0].name });
+                    photos.push(photoObj);
                     savePhotos(photos);
                     renderGallery();
-                    showToast('Photo uploaded successfully!', 'success');
+
+                    // Push to Cloud Firestore
+                    if (window.BirthdayFirebase) {
+                        var cloudId = await window.BirthdayFirebase.addPhotoCloud(photoObj);
+                        if (cloudId) {
+                            showToast('Photo uploaded to Cloud & visible to everyone! 🚀', 'success');
+                        }
+                    } else {
+                        showToast('Photo uploaded successfully!', 'success');
+                    }
+
                     urlInput.value = '';
                     captionInput.value = '';
                     fileInput.value = '';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
+                } catch (err) {
+                    console.error('Image compression/upload failed:', err);
+                    showToast('Failed to upload image. Please try another image file.', 'danger');
+                }
                 return;
             }
 
@@ -942,61 +1052,88 @@
                 return;
             }
 
+            var photoObj = { src: url, caption: caption || ('Photo ' + (getPhotos().length + 1)) };
             var photos = getPhotos();
-            photos.push({ src: url, caption: caption || 'Photo ' + (photos.length + 1) });
+            photos.push(photoObj);
             savePhotos(photos);
             renderGallery();
-            showToast('Photo added successfully!', 'success');
+
+            if (window.BirthdayFirebase) {
+                window.BirthdayFirebase.addPhotoCloud(photoObj).then(function (cloudId) {
+                    if (cloudId) showToast('Photo added to Cloud & visible to everyone! 🚀', 'success');
+                });
+            } else {
+                showToast('Photo added successfully!', 'success');
+            }
 
             urlInput.value = '';
             captionInput.value = '';
         }
 
-        function deletePhoto(index) {
-            var photos = getPhotos();
+        async function deletePhoto(index) {
+            var photos = (Array.isArray(currentCloudPhotos) && currentCloudPhotos.length > 0)
+                ? currentCloudPhotos
+                : getPhotos();
+
             if (index < 0 || index >= photos.length) return;
-            var removed = photos.splice(index, 1);
-            savePhotos(photos);
+            var target = photos[index];
+
+            if (target && target.id && window.BirthdayFirebase) {
+                await window.BirthdayFirebase.deletePhotoCloud(target.id);
+            }
+
+            var localPhotos = getPhotos();
+            var filtered = localPhotos.filter(function (p) { return p.src !== target.src; });
+            savePhotos(filtered);
             renderGallery();
-            showToast('Photo "' + escapeHtml((removed[0] && removed[0].caption) || '') + '" deleted.', 'danger');
+            showToast('Photo deleted from Cloud and everyone\'s view.', 'danger');
         }
 
         // ── RSVP Responses ───────────────────────────────────────
 
         function getRsvps() {
+            if (Array.isArray(currentCloudRsvps) && currentCloudRsvps.length > 0) {
+                return currentCloudRsvps;
+            }
             try { return JSON.parse(localStorage.getItem('rsvp_responses')) || []; }
             catch (e) { return []; }
         }
 
-        function renderRsvps() {
-            var responses = getRsvps();
+        function renderRsvps(responsesOverride) {
+            var responses = (Array.isArray(responsesOverride) && responsesOverride.length > 0)
+                ? responsesOverride
+                : getRsvps();
             var container = document.getElementById('rsvpList');
 
-            if (responses.length === 0) {
+            if (!responses || responses.length === 0) {
                 container.innerHTML = '<div class="empty-state"><span class="emoji">💕</span>No responses yet. Waiting for Nonty to respond! 💕</div>';
                 return;
             }
 
             var html = '';
-            responses.forEach(function (r) {
+            responses.forEach(function (r, index) {
                 var statusIcon = r.accepted ? '✅' : '❌';
-                var statusText = r.accepted ? 'Accepted' : 'Declined';
+                var statusText = r.accepted ? 'Accepted ♥️' : 'Declined';
+                var cairoTime = r.cairoTime || formatTimestamp(r.timestamp);
 
-                html += '<div class="rsvp-item">';
+                html += '<div class="rsvp-item position-relative">';
                 html += '<div class="d-flex justify-content-between align-items-start mb-2">';
-                html += '<div><span class="fs-5 me-2">' + statusIcon + '</span><strong>' + statusText + '</strong></div>';
-                html += '<small class="text-muted">' + formatTimestamp(r.timestamp) + '</small>';
+                html += '<div><span class="fs-5 me-2">' + statusIcon + '</span><strong class="text-primary">' + statusText + '</strong></div>';
+                html += '<div class="d-flex align-items-center gap-2">';
+                html += '<small class="text-muted">' + cairoTime + '</small>';
+                html += '<button class="btn btn-sm btn-outline-danger py-0 px-2 fs-8" onclick="deleteSingleRsvp(\'' + (r.id || '') + '\', ' + index + ')" title="Delete this response">🗑️</button>';
+                html += '</div>';
                 html += '</div>';
 
                 if (r.note || r.text) {
-                    html += '<p class="mb-2">' + escapeHtml(r.note || r.text) + '</p>';
+                    html += '<p class="mb-2 p-2 bg-light rounded text-dark fs-7" style="line-height: 1.6;">' + escapeHtml(r.note || r.text) + '</p>';
                 }
 
                 if (r.audioBase64) {
-                    html += '<div class="mt-2 p-2 bg-light rounded border">';
-                    html += '<div class="small fw-semibold text-muted mb-1">🎙️ Voice Recording:</div>';
-                    html += '<audio controls src="' + r.audioBase64 + '" class="w-100"></audio>';
-                    html += '<div class="mt-1"><a href="' + r.audioBase64 + '" download="nonty_voice_note.webm" class="btn btn-sm btn-link text-decoration-none p-0 text-primary fw-semibold">⬇️ Download Voice Note</a></div>';
+                    html += '<div class="mt-2 p-2 bg-white rounded border" style="border-color: #F0CCD1 !important;">';
+                    html += '<div class="small fw-semibold text-primary mb-1 d-flex align-items-center gap-1"><span>🎙️</span><span>Nonty\'s Voice Note:</span></div>';
+                    html += '<audio controls src="' + r.audioBase64 + '" class="w-100 mb-1"></audio>';
+                    html += '<div><a href="' + r.audioBase64 + '" download="nonty_voice_note.webm" class="btn btn-sm btn-link text-decoration-none p-0 text-primary fw-semibold fs-8">⬇️ Download Audio File</a></div>';
                     html += '</div>';
                 }
 
@@ -1006,11 +1143,31 @@
             container.innerHTML = html;
         }
 
-        function clearRsvp() {
-            if (!confirm('Are you sure you want to clear all RSVP responses? This cannot be undone.')) return;
-            localStorage.removeItem('rsvp_responses');
+        async function deleteSingleRsvp(cloudId, index) {
+            if (!confirm('Are you sure you want to delete this RSVP response?')) return;
+            if (cloudId && window.BirthdayFirebase) {
+                await window.BirthdayFirebase.deleteRSVPCloud(cloudId);
+            }
+            var local = getRsvps();
+            local.splice(index, 1);
+            localStorage.setItem('rsvp_responses', JSON.stringify(local));
             renderRsvps();
-            showToast('All RSVP responses cleared.', 'danger');
+            showToast('RSVP response deleted.', 'danger');
+        }
+
+        async function clearRsvp() {
+            if (!confirm('Are you sure you want to clear all RSVP responses? This cannot be undone.')) return;
+            if (window.BirthdayFirebase && Array.isArray(currentCloudRsvps)) {
+                for (var i = 0; i < currentCloudRsvps.length; i++) {
+                    if (currentCloudRsvps[i].id) {
+                        await window.BirthdayFirebase.deleteRSVPCloud(currentCloudRsvps[i].id);
+                    }
+                }
+            }
+            localStorage.removeItem('rsvp_responses');
+            currentCloudRsvps = [];
+            renderRsvps([]);
+            showToast('All RSVP responses cleared from Cloud & locally.', 'danger');
         }
 
         // ── Quick Actions ────────────────────────────────────────
