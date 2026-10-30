@@ -191,21 +191,25 @@
   }
 
   function hookRsvpAudioDucking() {
-    // When user plays voice recording preview in RSVP form, duck background music
+    // When user plays voice recording preview in RSVP form or the secret surprise voice note, duck background music
+    function isVoiceAudio(target) {
+      return target && (target.id === 'audio-preview' || target.id === 'surprise-voice-audio');
+    }
+
     document.addEventListener('play', (e) => {
-      if (e.target && e.target.id === 'audio-preview' && isPlaying && bgAudio) {
-        bgAudio.volume = 0.12;
+      if (isVoiceAudio(e.target) && isPlaying && bgAudio) {
+        bgAudio.volume = 0.08;
       }
     }, true);
 
     document.addEventListener('pause', (e) => {
-      if (e.target && e.target.id === 'audio-preview' && isPlaying && bgAudio) {
+      if (isVoiceAudio(e.target) && isPlaying && bgAudio) {
         fadeIn(TARGET_VOLUME, 500);
       }
     }, true);
 
     document.addEventListener('ended', (e) => {
-      if (e.target && e.target.id === 'audio-preview' && isPlaying && bgAudio) {
+      if (isVoiceAudio(e.target) && isPlaying && bgAudio) {
         fadeIn(TARGET_VOLUME, 500);
       }
     }, true);

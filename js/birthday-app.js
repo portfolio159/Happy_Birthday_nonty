@@ -9,17 +9,32 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGallery();
   initVoiceRecorder();
   initRSVPForm();
+  initSecretSurpriseSection();
 
   // Cloud Realtime Synchronization via Firebase
   if (window.BirthdayFirebase) {
     window.BirthdayFirebase.listenStages((cloudStages) => {
       renderStages();
+      renderSecretSurpriseSection();
     });
 
     window.BirthdayFirebase.listenGallery((cloudPhotos) => {
       renderGallery(cloudPhotos);
     });
   }
+
+  // Cross-Tab Realtime LocalStorage Sync
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'secret_surprise_visible' || e.key === 'secret_surprise_custom') {
+      renderSecretSurpriseSection();
+    }
+    if (e.key === 'gallery_photos') {
+      renderGallery();
+    }
+    if (e.key === 'stage2_visible' || e.key === 'stage3_visible') {
+      renderStages();
+    }
+  });
 });
 
 /* =========================================================================
@@ -638,4 +653,240 @@ function blobToBase64(blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+/* =========================================================================
+   5. SECRET SURPRISE VOICE NOTE (Admin Dashboard Controlled)
+   ========================================================================= */
+
+function formatAudioSeconds(sec) {
+  if (isNaN(sec) || !isFinite(sec)) return '00:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+/**
+ * Checks visibility from localStorage and renders the custom secret voice message.
+ */
+function renderSecretSurpriseSection() {
+  const isVisible = localStorage.getItem('secret_surprise_visible') === 'true';
+  const section = document.getElementById('secret-surprise');
+  const navItem = document.getElementById('nav-item-surprise');
+
+  if (!section) return;
+
+  if (isVisible) {
+    section.classList.remove('d-none');
+    if (navItem) navItem.classList.remove('d-none');
+  } else {
+    section.classList.add('d-none');
+    if (navItem) navItem.classList.add('d-none');
+  }
+
+  // Populate custom values if saved from dashboard
+  try {
+    const customRaw = localStorage.getItem('secret_surprise_custom');
+    const storedAudio = localStorage.getItem('secret_surprise_audio');
+    const audioEl = document.getElementById('surprise-voice-audio');
+
+    if (audioEl && storedAudio) {
+      if (audioEl.src !== storedAudio) {
+        audioEl.src = storedAudio;
+      }
+    }
+
+    if (customRaw) {
+      const data = JSON.parse(customRaw);
+      const titleEl = document.getElementById('surprise-display-title');
+      const nameEl = document.getElementById('surprise-display-name');
+      const salutationEl = document.getElementById('letter-salutation');
+      const photoEl = document.getElementById('letter-polaroid-img');
+      const sigEl = document.getElementById('letter-signature-text');
+
+      if (titleEl && data.title) titleEl.textContent = data.title;
+      if (nameEl && data.name) nameEl.textContent = data.name;
+      if (salutationEl && data.name) salutationEl.textContent = data.name;
+      if (sigEl && data.signature) sigEl.textContent = data.signature;
+      if (photoEl && data.photo) photoEl.src = data.photo;
+
+      if (audioEl && data.audio && !storedAudio) {
+        audioEl.src = data.audio;
+      }
+    }
+  } catch (err) {
+    console.warn('[Surprise] Error parsing custom surprise data:', err);
+  }
+}
+
+/**
+ * Initializes interactive envelope opening, wax seal click, and the custom voice note audio console.
+ */
+function initSecretSurpriseSection() {
+  renderSecretSurpriseSection();
+
+  const sealBtn = document.getElementById('secret-wax-seal-btn');
+  const openBtn = document.getElementById('open-secret-letter-btn');
+  const foldBtn = document.getElementById('letter-fold-btn');
+  const celebrateBtn = document.getElementById('letter-celebrate-btn');
+  const envWrapper = document.getElementById('secret-envelope-wrapper');
+  const letterCard = document.getElementById('secret-letter-card');
+
+  // Voice Note Audio Player Elements
+  const audioEl = document.getElementById('surprise-voice-audio');
+  const playBtn = document.getElementById('voice-play-btn');
+  const playIcon = document.getElementById('voice-play-icon');
+  const consoleEl = document.getElementById('voice-note-console');
+  const discEl = document.getElementById('voice-disc');
+  const trackSlider = document.getElementById('voice-track-slider');
+  const timeCurEl = document.getElementById('voice-time-current');
+  const timeTotEl = document.getElementById('voice-time-total');
+  const statusHintEl = document.getElementById('voice-status-hint');
+
+  function openLetter(e) {
+    if (e) e.preventDefault();
+
+    // Trigger sweet heart burst at click position
+    if (typeof window.__burstHearts === 'function') {
+      const x = e ? e.clientX : window.innerWidth / 2;
+      const y = e ? e.clientY : window.innerHeight / 2;
+      window.__burstHearts(x, y, 25);
+    }
+
+    if (envWrapper) {
+      envWrapper.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      envWrapper.style.opacity = '0';
+      envWrapper.style.transform = 'scale(0.92) translateY(20px)';
+      setTimeout(() => {
+        envWrapper.classList.add('d-none');
+        if (letterCard) {
+          letterCard.classList.remove('d-none');
+          letterCard.style.opacity = '0';
+          letterCard.style.transform = 'translateY(35px) scale(0.96)';
+          void letterCard.offsetWidth; // trigger reflow
+          letterCard.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+          letterCard.style.opacity = '1';
+          letterCard.style.transform = 'translateY(0) scale(1)';
+
+          // Smoothly scroll to the letter top
+          letterCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 350);
+    }
+  }
+
+  function foldLetter(e) {
+    if (e) e.preventDefault();
+
+    // If audio is playing when folded, pause it
+    if (audioEl && !audioEl.paused) {
+      audioEl.pause();
+    }
+
+    if (letterCard) {
+      letterCard.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+      letterCard.style.opacity = '0';
+      letterCard.style.transform = 'translateY(25px) scale(0.96)';
+      setTimeout(() => {
+        letterCard.classList.add('d-none');
+        if (envWrapper) {
+          envWrapper.classList.remove('d-none');
+          envWrapper.style.opacity = '0';
+          envWrapper.style.transform = 'scale(0.95)';
+          void envWrapper.offsetWidth;
+          envWrapper.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+          envWrapper.style.opacity = '1';
+          envWrapper.style.transform = 'scale(1) translateY(0)';
+
+          envWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }
+
+  if (sealBtn) sealBtn.addEventListener('click', openLetter);
+  if (openBtn) openBtn.addEventListener('click', openLetter);
+  if (foldBtn) foldBtn.addEventListener('click', foldLetter);
+
+  if (celebrateBtn) {
+    celebrateBtn.addEventListener('click', (e) => {
+      if (typeof window.__burstHearts === 'function') {
+        const x = e ? e.clientX : window.innerWidth / 2;
+        const y = e ? e.clientY : window.innerHeight / 2;
+        window.__burstHearts(x, y, 40);
+      }
+    });
+  }
+
+  // ── Custom Audio Console Logic ──
+  if (playBtn && audioEl) {
+    function toggleAudio() {
+      if (!audioEl.src || audioEl.src === window.location.href) {
+        if (statusHintEl) {
+          statusHintEl.innerHTML = '<span class="text-danger fw-semibold">⚠️ No audio file uploaded yet. Upload one in the dashboard!</span>';
+        }
+        return;
+      }
+
+      if (audioEl.paused) {
+        audioEl.play().catch((err) => {
+          console.warn('Voice play blocked or error:', err);
+        });
+        if (typeof window.__burstHearts === 'function') {
+          const rect = playBtn.getBoundingClientRect();
+          window.__burstHearts(rect.left + rect.width / 2, rect.top + rect.height / 2, 15);
+        }
+      } else {
+        audioEl.pause();
+      }
+    }
+
+    playBtn.addEventListener('click', toggleAudio);
+
+    audioEl.addEventListener('play', () => {
+      if (playIcon) playIcon.textContent = '❚❚';
+      if (consoleEl) consoleEl.classList.add('is-playing');
+      if (discEl) discEl.classList.add('is-spinning');
+      if (statusHintEl) statusHintEl.textContent = 'Now Playing • Listening to Pola\'s voice note 🎙️✨';
+    });
+
+    audioEl.addEventListener('pause', () => {
+      if (playIcon) playIcon.textContent = '▶';
+      if (consoleEl) consoleEl.classList.remove('is-playing');
+      if (discEl) discEl.classList.remove('is-spinning');
+      if (statusHintEl) statusHintEl.textContent = 'Paused • Tap ▶ to resume listening';
+    });
+
+    audioEl.addEventListener('ended', () => {
+      if (playIcon) playIcon.textContent = '▶';
+      if (consoleEl) consoleEl.classList.remove('is-playing');
+      if (discEl) discEl.classList.remove('is-spinning');
+      if (trackSlider) trackSlider.value = 0;
+      if (timeCurEl) timeCurEl.textContent = '00:00';
+      if (statusHintEl) statusHintEl.textContent = 'Finished • Tap ▶ to replay';
+    });
+
+    audioEl.addEventListener('timeupdate', () => {
+      if (audioEl.duration && !isNaN(audioEl.duration)) {
+        if (timeCurEl) timeCurEl.textContent = formatAudioSeconds(audioEl.currentTime);
+        if (trackSlider) {
+          trackSlider.value = (audioEl.currentTime / audioEl.duration) * 100;
+        }
+      }
+    });
+
+    audioEl.addEventListener('loadedmetadata', () => {
+      if (audioEl.duration && !isNaN(audioEl.duration)) {
+        if (timeTotEl) timeTotEl.textContent = formatAudioSeconds(audioEl.duration);
+      }
+    });
+
+    if (trackSlider) {
+      trackSlider.addEventListener('input', () => {
+        if (audioEl.duration && !isNaN(audioEl.duration)) {
+          audioEl.currentTime = (trackSlider.value / 100) * audioEl.duration;
+        }
+      });
+    }
+  }
 }

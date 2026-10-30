@@ -395,6 +395,99 @@
                 </div>
             </div>
 
+            <!-- Secret Surprise Voice Note Controls -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span>🎙️ Secret Surprise Voice Message (المفاجأة الصوتية الخاصة)</span>
+                        <span id="surpriseStatusBadge" class="badge badge-hidden">🔒 Hidden (Secret)</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between p-3 rounded-3 mb-4 border" style="background: linear-gradient(135deg, #FFF8F9, #FDF0F2); border-color: #F0CCD1 !important;">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-primary fs-6">Show / Hide Secret Voice Note on Website</h6>
+                                <p class="text-muted small m-0">Turn this ON whenever you are ready to reveal the secret birthday voice recording to Nonty! (Default: Hidden)</p>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 mt-3 mt-sm-0">
+                                <span id="surpriseSwitchLabel" class="fw-semibold small text-muted">Currently: Hidden 🔒</span>
+                                <div class="form-check form-switch mb-0 fs-4">
+                                    <input class="form-check-input" type="checkbox" id="secretSurpriseToggle" onchange="toggleSecretSurprise()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Note Upload & Preview Console -->
+                        <div class="p-3 rounded-3 mb-4 border" style="background: #ffffff; border-color: #F0CCD1 !important;">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fs-4">🎙️</span>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">Your Voice Recording (الريكورد الصوتي)</h6>
+                                        <small class="text-muted">Upload your voice note (.mp3, .m4a, .wav) to play inside the surprise card</small>
+                                    </div>
+                                </div>
+                                <span id="adminAudioStatusBadge" class="badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill">No Audio Uploaded</span>
+                            </div>
+
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-7">
+                                    <label class="form-label fw-semibold small mb-1">Select Audio File from Your Device:</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="surpriseAudioFileInput" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg,.webm" onchange="handleVoiceAudioUpload(this)">
+                                        <button class="btn btn-primary-custom px-3" type="button" onclick="document.getElementById('surpriseAudioFileInput').click()">Choose File</button>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small mb-1">Or Enter Audio Path / URL:</label>
+                                    <input type="text" class="form-control" id="surpriseAudioPathInput" placeholder="audio/my_voice.mp3 or https://..." onchange="handleAudioPathChange(this.value)">
+                                </div>
+                            </div>
+
+                            <!-- Live Audio Player Preview in Dashboard -->
+                            <div id="adminAudioPreviewBox" class="mt-3 p-3 rounded-3 bg-light border d-none">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="small fw-bold text-success">✓ Voice Note Ready to Play:</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-8" onclick="clearSurpriseAudio()">🗑️ Remove Audio</button>
+                                </div>
+                                <audio id="adminAudioPreview" controls class="w-100"></audio>
+                            </div>
+                        </div>
+
+                        <!-- Additional Details -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="surpriseInputTitle">Section Header Title</label>
+                                <input type="text" class="form-control" id="surpriseInputTitle" value="A Voice Message, Just For You 🎧✨">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="surpriseInputName">Recipient / Envelope Label</label>
+                                <input type="text" class="form-control" id="surpriseInputName" value="My Beautiful Nonty 👑">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="surpriseInputPhoto">Polaroid Photo Inside Card</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="surpriseInputPhoto" placeholder="images/the-couple.jpg">
+                                    <input type="file" class="d-none" id="surpriseInputPhotoFile" accept="image/*" onchange="handleSurprisePhotoUpload(this)">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('surpriseInputPhotoFile').click()">Upload Photo</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="surpriseInputSignature">Signature Sign-off</label>
+                                <input type="text" class="form-control" id="surpriseInputSignature" value="Forever Yours, Pola ♥️">
+                            </div>
+                            <div class="col-12 d-flex flex-wrap gap-2 justify-content-end mt-3">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="previewSecretSurprise()">
+                                    👁️ Preview on Site
+                                </button>
+                                <button type="button" class="btn btn-primary-custom rounded-pill px-4" onclick="saveSecretSurpriseSettings()">
+                                    💾 Save Voice Message & Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Photo Gallery Manager -->
             <div class="col-12">
                 <div class="card">
@@ -587,6 +680,7 @@
 
             // Initialize Dashboard Data
             loadStageToggles();
+            loadSecretSurpriseSettings();
             renderGallery();
             renderRsvps();
 
@@ -601,6 +695,7 @@
                 // Listen to Stages Changes in Cloud
                 window.BirthdayFirebase.listenStages(function (cloudStages) {
                     loadStageToggles();
+                    loadSecretSurpriseSettings();
                 });
 
                 // Listen to Photo Gallery Changes in Cloud
@@ -855,11 +950,200 @@
                     stage2_visible: localStorage.getItem('stage2_visible') === 'true',
                     stage3_visible: localStorage.getItem('stage3_visible') === 'true',
                     stage2_unlock_time: getUnlockTime('stage2'),
-                    stage3_unlock_time: getUnlockTime('stage3')
+                    stage3_unlock_time: getUnlockTime('stage3'),
+                    secret_surprise_visible: localStorage.getItem('secret_surprise_visible') === 'true'
                 }).then(function (ok) {
-                    if (ok) console.log('[Admin] Stages synced to cloud');
+                    if (ok) console.log('[Admin] Stages & Surprise synced to cloud');
                 });
             }
+        }
+
+        // ── Secret Surprise Voice Note ──────────────────────────
+
+        function loadSecretSurpriseSettings() {
+            var isVisible = localStorage.getItem('secret_surprise_visible') === 'true';
+            var toggle = document.getElementById('secretSurpriseToggle');
+            var badge = document.getElementById('surpriseStatusBadge');
+            var label = document.getElementById('surpriseSwitchLabel');
+
+            if (toggle) toggle.checked = isVisible;
+            if (badge) {
+                if (isVisible) {
+                    badge.textContent = '✨ Live on Website 💖';
+                    badge.className = 'badge badge-visible';
+                } else {
+                    badge.textContent = '🔒 Hidden (Secret)';
+                    badge.className = 'badge badge-hidden';
+                }
+            }
+            if (label) {
+                label.textContent = isVisible ? 'Currently: Visible on Site 💖' : 'Currently: Hidden 🔒';
+                label.className = isVisible ? 'fw-bold small text-success' : 'fw-semibold small text-muted';
+            }
+
+            // Load stored audio info
+            var storedAudio = localStorage.getItem('secret_surprise_audio') || '';
+            var audioPathInput = document.getElementById('surpriseAudioPathInput');
+            var audioPreview = document.getElementById('adminAudioPreview');
+            var audioBox = document.getElementById('adminAudioPreviewBox');
+            var audioBadge = document.getElementById('adminAudioStatusBadge');
+
+            if (storedAudio) {
+                if (audioPathInput && !storedAudio.startsWith('data:')) {
+                    audioPathInput.value = storedAudio;
+                }
+                if (audioPreview) {
+                    audioPreview.src = storedAudio;
+                }
+                if (audioBox) audioBox.classList.remove('d-none');
+                if (audioBadge) {
+                    audioBadge.textContent = '✓ Voice Recording Ready 🎙️';
+                    audioBadge.className = 'badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill';
+                }
+            } else {
+                if (audioPathInput) audioPathInput.value = '';
+                if (audioPreview) audioPreview.removeAttribute('src');
+                if (audioBox) audioBox.classList.add('d-none');
+                if (audioBadge) {
+                    audioBadge.textContent = 'No Audio Uploaded';
+                    audioBadge.className = 'badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill';
+                }
+            }
+
+            try {
+                var stored = JSON.parse(localStorage.getItem('secret_surprise_custom') || 'null');
+                if (stored) {
+                    if (document.getElementById('surpriseInputTitle') && stored.title) document.getElementById('surpriseInputTitle').value = stored.title;
+                    if (document.getElementById('surpriseInputName') && stored.name) document.getElementById('surpriseInputName').value = stored.name;
+                    if (document.getElementById('surpriseInputPhoto') && stored.photo) document.getElementById('surpriseInputPhoto').value = stored.photo;
+                    if (document.getElementById('surpriseInputSignature') && stored.signature) document.getElementById('surpriseInputSignature').value = stored.signature;
+                }
+            } catch (_) {}
+        }
+
+        function toggleSecretSurprise() {
+            var toggle = document.getElementById('secretSurpriseToggle');
+            var checked = toggle ? toggle.checked : false;
+
+            localStorage.setItem('secret_surprise_visible', checked.toString());
+            loadSecretSurpriseSettings();
+            syncStagesToCloud();
+
+            if (checked) {
+                showToast('💖 Secret Surprise Section is now LIVE on the website!', 'success');
+            } else {
+                showToast('🔒 Secret Surprise Section is now HIDDEN from the website.', 'warning');
+            }
+        }
+
+        function handleVoiceAudioUpload(fileInput) {
+            if (fileInput.files && fileInput.files.length > 0) {
+                var file = fileInput.files[0];
+                var reader = new FileReader();
+                showToast('Processing audio file... ⏳', 'warning');
+                reader.onload = function(e) {
+                    var dataUrl = e.target.result;
+                    try {
+                        localStorage.setItem('secret_surprise_audio', dataUrl);
+                        var audioPreview = document.getElementById('adminAudioPreview');
+                        var audioBox = document.getElementById('adminAudioPreviewBox');
+                        var audioBadge = document.getElementById('adminAudioStatusBadge');
+                        var pathInput = document.getElementById('surpriseAudioPathInput');
+
+                        if (pathInput) pathInput.value = '';
+                        if (audioPreview) audioPreview.src = dataUrl;
+                        if (audioBox) audioBox.classList.remove('d-none');
+                        if (audioBadge) {
+                            audioBadge.textContent = '✓ Audio Uploaded (' + (file.name || 'Voice Note') + ')';
+                            audioBadge.className = 'badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill';
+                        }
+                        showToast('Voice recording uploaded and saved successfully! 🎙️💖', 'success');
+                    } catch (err) {
+                        console.error('Storage quota exceeded or error:', err);
+                        showToast('Audio file is too large for browser local cache. Try a shorter audio or save it in audio/ folder and enter its path!', 'danger');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleAudioPathChange(path) {
+            var trimmed = (path || '').trim();
+            var audioPreview = document.getElementById('adminAudioPreview');
+            var audioBox = document.getElementById('adminAudioPreviewBox');
+            var audioBadge = document.getElementById('adminAudioStatusBadge');
+
+            if (trimmed) {
+                localStorage.setItem('secret_surprise_audio', trimmed);
+                if (audioPreview) audioPreview.src = trimmed;
+                if (audioBox) audioBox.classList.remove('d-none');
+                if (audioBadge) {
+                    audioBadge.textContent = '✓ Audio Path Set: ' + trimmed;
+                    audioBadge.className = 'badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill';
+                }
+                showToast('Audio path updated and saved! 🎶', 'success');
+            } else {
+                clearSurpriseAudio();
+            }
+        }
+
+        function clearSurpriseAudio() {
+            localStorage.removeItem('secret_surprise_audio');
+            var audioPreview = document.getElementById('adminAudioPreview');
+            var audioBox = document.getElementById('adminAudioPreviewBox');
+            var audioBadge = document.getElementById('adminAudioStatusBadge');
+            var fileInput = document.getElementById('surpriseAudioFileInput');
+            var pathInput = document.getElementById('surpriseAudioPathInput');
+
+            if (fileInput) fileInput.value = '';
+            if (pathInput) pathInput.value = '';
+            if (audioPreview) {
+                audioPreview.pause();
+                audioPreview.removeAttribute('src');
+                audioPreview.load();
+            }
+            if (audioBox) audioBox.classList.add('d-none');
+            if (audioBadge) {
+                audioBadge.textContent = 'No Audio Uploaded';
+                audioBadge.className = 'badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill';
+            }
+            showToast('Voice recording removed.', 'warning');
+        }
+
+        function saveSecretSurpriseSettings() {
+            var title = (document.getElementById('surpriseInputTitle')?.value || '').trim();
+            var name = (document.getElementById('surpriseInputName')?.value || '').trim();
+            var photo = (document.getElementById('surpriseInputPhoto')?.value || '').trim();
+            var signature = (document.getElementById('surpriseInputSignature')?.value || '').trim();
+
+            var data = {
+                title: title || 'A Voice Message, Just For You 🎧✨',
+                name: name || 'My Beautiful Nonty 👑',
+                photo: photo || 'images/the-couple.jpg',
+                signature: signature || 'Forever Yours, Pola ♥️'
+            };
+
+            localStorage.setItem('secret_surprise_custom', JSON.stringify(data));
+            syncStagesToCloud();
+            showToast('Secret surprise settings saved successfully! 💌🎙️', 'success');
+        }
+
+        async function handleSurprisePhotoUpload(fileInput) {
+            if (fileInput.files && fileInput.files.length > 0) {
+                try {
+                    showToast('Optimizing photo... ⏳', 'warning');
+                    var dataUrl = await compressImageFile(fileInput.files[0], 1000, 0.85);
+                    document.getElementById('surpriseInputPhoto').value = dataUrl;
+                    saveSecretSurpriseSettings();
+                    showToast('Photo uploaded and attached to Secret Letter! 📸', 'success');
+                } catch (e) {
+                    showToast('Failed to upload photo.', 'danger');
+                }
+            }
+        }
+
+        function previewSecretSurprise() {
+            window.open('index.html#secret-surprise', '_blank');
         }
 
         function toggleStage(stage) {
