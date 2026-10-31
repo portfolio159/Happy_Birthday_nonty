@@ -459,11 +459,33 @@ function initVoiceRecorder() {
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = getSupportedAudioMimeType();
-      const options = mimeType ? { mimeType } : {};
+      // Voice-optimized constraints: mono channel, noise suppression, echo cancellation
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
 
-      mediaRecorder = new MediaRecorder(stream, options);
+      const mimeType = getSupportedAudioMimeType();
+      const targetBitrate = 28000; // 28 kbps voice bitrate (crisp vocal quality, tiny file size)
+
+      try {
+        if (mimeType) {
+          mediaRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: targetBitrate });
+        } else {
+          mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: targetBitrate });
+        }
+      } catch (_) {
+        try {
+          mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        } catch (_) {
+          mediaRecorder = new MediaRecorder(stream);
+        }
+      }
+
       const actualMimeType = mediaRecorder.mimeType || mimeType || 'audio/mp4';
       audioChunks = [];
 
@@ -521,11 +543,21 @@ function initVoiceRecorder() {
         statusEl.innerHTML = '<span class="text-danger fw-bold">● Recording now… Speak into your mic! 🎙️</span>';
       }
 
+      const MAX_RECORDING_SECONDS = 90; // 1 min 30 sec limit (plenty for RSVP voice note)
       elapsedSeconds = 0;
       if (timerEl) timerEl.textContent = '00:00';
       timerInterval = setInterval(() => {
         elapsedSeconds++;
         if (timerEl) timerEl.textContent = formatTime(elapsedSeconds);
+        if (elapsedSeconds >= MAX_RECORDING_SECONDS) {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            try { mediaRecorder.requestData(); } catch (_) {}
+            mediaRecorder.stop();
+          }
+          if (statusEl) {
+            statusEl.innerHTML = '<span class="text-success fw-semibold">✓ Reached maximum length (1:30). Voice note ready! 🎵</span>';
+          }
+        }
       }, 1000);
     } catch (err) {
       console.error('Microphone error:', err);
@@ -586,9 +618,11 @@ function initRSVPForm() {
     e.preventDefault();
 
     const submitBtn = form.querySelector('.rsvp-submit-btn');
+    const originalBtnContent = submitBtn ? submitBtn.innerHTML : '<span>Send My Response With Love 💌</span>';
+
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span>Sending with love... 💌</span>';
+      submitBtn.innerHTML = '<span>Processing response... ⏳</span>';
     }
 
     const acceptedEl = document.getElementById('rsvp-accept-check');
@@ -601,7 +635,14 @@ function initRSVPForm() {
     const blob = typeof window.__getRecordedBlob === 'function' ? window.__getRecordedBlob() : null;
 
     if (blob) {
-      audioBase64 = await blobToBase64(blob);
+      if (submitBtn) {
+        submitBtn.innerHTML = '<span>Processing voice note... 🎙️</span>';
+      }
+      try {
+        audioBase64 = await blobToBase64(blob);
+      } catch (convErr) {
+        console.warn('Audio base64 conversion failed:', convErr);
+      }
     }
 
     const entry = {
@@ -611,24 +652,52 @@ function initRSVPForm() {
       timestamp: new Date().toISOString(),
     };
 
-    // 1. Save to local storage as fallback
-    let responses = [];
+    // 1. Save to local storage as fallback (protect against storage quota)
     try {
+      let responses = [];
       const stored = localStorage.getItem('rsvp_responses');
       if (stored) responses = JSON.parse(stored);
+      // Create lightweight local copy to avoid LocalStorage quota crash
+      const localEntry = {
+        accepted: entry.accepted,
+        note: entry.note,
+        timestamp: entry.timestamp,
+        hasAudio: Boolean(entry.audioBase64),
+        audioBase64: (entry.audioBase64 && entry.audioBase64.length < 500000) ? entry.audioBase64 : null
+      };
+      responses.push(localEntry);
+      localStorage.setItem('rsvp_responses', JSON.stringify(responses));
     } catch (_) {
-      /* ignore */
+      /* ignore quota errors */
     }
-    responses.push(entry);
-    localStorage.setItem('rsvp_responses', JSON.stringify(responses));
 
     // 2. Real-time Cloud Sync to Firebase Firestore
+    let cloudSuccess = false;
     if (window.BirthdayFirebase) {
-      try {
-        await window.BirthdayFirebase.submitRSVPCloud(entry);
-      } catch (cloudErr) {
-        console.warn('[RSVP] Cloud Firestore sync warning:', cloudErr);
+      if (submitBtn) {
+        submitBtn.innerHTML = '<span>Saving with all my love... 💌☁️</span>';
       }
+      try {
+        const savedId = await window.BirthdayFirebase.submitRSVPCloud(entry);
+        if (savedId) {
+          cloudSuccess = true;
+        }
+      } catch (cloudErr) {
+        console.error('[RSVP] Cloud Firestore sync error:', cloudErr);
+      }
+    } else {
+      // If no firebase, treat local save as success
+      cloudSuccess = true;
+    }
+
+    // If cloud submission failed while user is online, inform user & don't lose the voice note!
+    if (window.BirthdayFirebase && !cloudSuccess && navigator.onLine) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnContent;
+      }
+      alert('⚠️ Could not upload your response to the server. Please check your internet connection and tap send again!');
+      return;
     }
 
     // Smooth transition: Hide form, show celebration card
@@ -636,9 +705,10 @@ function initRSVPForm() {
     if (successAlert) {
       successAlert.classList.remove('d-none');
       successAlert.style.opacity = '0';
-      successAlert.style.transition = 'opacity 0.5s ease';
+      successAlert.style.transition = 'opacity 0.6s ease';
       void successAlert.offsetWidth;
       successAlert.style.opacity = '1';
+      successAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
 }

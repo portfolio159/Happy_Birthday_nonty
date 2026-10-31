@@ -195,7 +195,7 @@ window.BirthdayFirebase = (function () {
      ───────────────────────────────────────────────────────────── */
 
   /**
-   * Submit RSVP to Cloud Firestore.
+   * Submit RSVP to Cloud Firestore with automatic chunking for long/high-bitrate voice notes.
    */
   async function submitRSVPCloud(entry) {
     let cairoTime = '';
@@ -210,24 +210,62 @@ window.BirthdayFirebase = (function () {
       cairoTime = new Date().toLocaleString();
     }
 
-    const payload = {
-      accepted: Boolean(entry.accepted),
-      note: String(entry.note || '').substring(0, 2000),
-      audioBase64: entry.audioBase64 || null,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      cairoTime: cairoTime
-    };
-
     const firestore = init();
     if (!firestore) {
       console.warn('[BirthdayFirebase] Firestore offline, saving RSVP to local fallback.');
       return false;
     }
 
+    const rawAudio = entry.audioBase64 || null;
+    const CHUNK_LIMIT = 600000; // 600KB chunks (well below Firestore 1MB document limit)
+
     try {
-      const docRef = await firestore.collection('rsvp').add(payload);
-      console.log('[BirthdayFirebase] RSVP saved to cloud with ID:', docRef.id);
-      return docRef.id;
+      if (rawAudio && rawAudio.length > CHUNK_LIMIT) {
+        // Large audio: Split across subcollection chunks
+        const chunks = [];
+        for (let i = 0; i < rawAudio.length; i += CHUNK_LIMIT) {
+          chunks.push(rawAudio.substring(i, i + CHUNK_LIMIT));
+        }
+
+        const payload = {
+          accepted: Boolean(entry.accepted),
+          note: String(entry.note || '').substring(0, 2000),
+          hasAudio: true,
+          audioChunksCount: chunks.length,
+          audioBase64: null,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          cairoTime: cairoTime
+        };
+
+        const docRef = await firestore.collection('rsvp').add(payload);
+        console.log('[BirthdayFirebase] RSVP parent doc created:', docRef.id, 'with', chunks.length, 'chunks');
+
+        // Write each chunk to subcollection
+        for (let idx = 0; idx < chunks.length; idx++) {
+          await docRef.collection('chunks').doc(String(idx)).set({
+            chunkIndex: idx,
+            data: chunks[idx],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+        console.log('[BirthdayFirebase] All audio chunks uploaded successfully! 🎙️');
+        return docRef.id;
+      } else {
+        // Standard audio: store inline in single document
+        const payload = {
+          accepted: Boolean(entry.accepted),
+          note: String(entry.note || '').substring(0, 2000),
+          hasAudio: Boolean(rawAudio),
+          audioChunksCount: 0,
+          audioBase64: rawAudio,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          cairoTime: cairoTime
+        };
+
+        const docRef = await firestore.collection('rsvp').add(payload);
+        console.log('[BirthdayFirebase] RSVP saved to cloud with ID:', docRef.id);
+        return docRef.id;
+      }
     } catch (err) {
       console.error('[BirthdayFirebase] Error submitting RSVP to cloud:', err);
       return false;
@@ -236,6 +274,7 @@ window.BirthdayFirebase = (function () {
 
   /**
    * Listen to RSVP collection in real time (for admin dashboard).
+   * Automatically reassembles chunked audio if present.
    */
   function listenRSVPs(onUpdate) {
     const firestore = init();
@@ -243,20 +282,45 @@ window.BirthdayFirebase = (function () {
 
     try {
       return firestore.collection('rsvp')
-        .orderBy('timestamp', 'desc')
-        .onSnapshot((snapshot) => {
+        .onSnapshot(async (snapshot) => {
           const rsvps = [];
-          snapshot.forEach((doc) => {
+          
+          for (const doc of snapshot.docs) {
             const data = doc.data();
+            let fullAudio = data.audioBase64 || null;
+
+            // If audio was chunked into subcollection, fetch and reassemble
+            if ((data.audioChunksCount > 0 || data.hasAudio) && !fullAudio) {
+              try {
+                const chunksSnap = await doc.ref.collection('chunks').get();
+                if (!chunksSnap.empty) {
+                  const sortedChunkDocs = chunksSnap.docs.sort((a, b) => {
+                    return (a.data().chunkIndex || 0) - (b.data().chunkIndex || 0);
+                  });
+                  let assembled = '';
+                  sortedChunkDocs.forEach((cDoc) => {
+                    assembled += (cDoc.data().data || '');
+                  });
+                  fullAudio = assembled;
+                }
+              } catch (chunkErr) {
+                console.warn('[BirthdayFirebase] Warning reading audio chunks for doc', doc.id, chunkErr);
+              }
+            }
+
             rsvps.push({
               id: doc.id,
               accepted: data.accepted,
               note: data.note || data.text || '',
-              audioBase64: data.audioBase64 || null,
+              audioBase64: fullAudio,
+              hasAudio: Boolean(fullAudio || data.hasAudio),
               cairoTime: data.cairoTime || '',
               timestamp: data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate().toISOString() : data.timestamp) : new Date().toISOString()
             });
-          });
+          }
+
+          // Sort descending by timestamp in JavaScript
+          rsvps.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
           // Sync to localStorage
           try {
@@ -276,14 +340,25 @@ window.BirthdayFirebase = (function () {
   }
 
   /**
-   * Delete an RSVP by doc ID.
+   * Delete an RSVP by doc ID (including any chunk subdocuments).
    */
   async function deleteRSVPCloud(docId) {
     const firestore = init();
     if (!firestore) return false;
 
     try {
-      await firestore.collection('rsvp').doc(docId).delete();
+      const docRef = firestore.collection('rsvp').doc(docId);
+      const chunksSnap = await docRef.collection('chunks').get();
+      if (!chunksSnap.empty) {
+        const batch = firestore.batch();
+        chunksSnap.forEach((cDoc) => {
+          batch.delete(cDoc.ref);
+        });
+        batch.delete(docRef);
+        await batch.commit();
+      } else {
+        await docRef.delete();
+      }
       return true;
     } catch (err) {
       console.error('[BirthdayFirebase] Error deleting RSVP:', err);

@@ -95,12 +95,17 @@ service cloud.firestore {
 
     // Validator for RSVP responses
     function isValidRsvp(data) {
-      let allowedKeys = ['note', 'text', 'accepted', 'audioBase64', 'timestamp', 'cairoTime', 'createdAt'];
+      let allowedKeys = [
+        'note', 'text', 'accepted', 'audioBase64', 'hasAudio',
+        'audioChunksCount', 'timestamp', 'cairoTime', 'createdAt'
+      ];
       return hasOnlyAllowedFields(allowedKeys) &&
         ('accepted' in data && data.accepted is bool) &&
         (!('note' in data) || (data.note is string && data.note.size() <= 2000)) &&
         (!('text' in data) || (data.text is string && data.text.size() <= 2000)) &&
-        (!('audioBase64' in data) || data.audioBase64 == null || (data.audioBase64 is string && data.audioBase64.size() <= 800000)) &&
+        (!('hasAudio' in data) || data.hasAudio is bool) &&
+        (!('audioChunksCount' in data) || (data.audioChunksCount is number && data.audioChunksCount >= 0 && data.audioChunksCount <= 20)) &&
+        (!('audioBase64' in data) || data.audioBase64 == null || (data.audioBase64 is string && data.audioBase64.size() <= 950000)) &&
         (!('cairoTime' in data) || (data.cairoTime is string && data.cairoTime.size() <= 100)) &&
         (!('timestamp' in data) || data.timestamp is timestamp || (data.timestamp is number && data.timestamp > 0) || (data.timestamp is string && data.timestamp.size() <= 50)) &&
         isValidFlexibleTimestamp('createdAt');
@@ -144,6 +149,15 @@ service cloud.firestore {
 
       // Submitted RSVPs cannot be modified or tampered with
       allow update: if false;
+
+      // Subcollection for split audio chunks (when voice note is large)
+      match /chunks/{chunkId} {
+        allow read, delete: if true;
+        allow create: if request.resource.data.keys().hasOnly(['chunkIndex', 'data', 'createdAt']) &&
+          request.resource.data.chunkIndex is number &&
+          request.resource.data.data is string &&
+          request.resource.data.data.size() <= 950000;
+      }
     }
 
     // Default Deny: Deny all reads and writes by default across any other paths
