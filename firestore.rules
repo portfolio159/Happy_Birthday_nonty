@@ -68,11 +68,14 @@ service cloud.firestore {
     function isValidStages(data) {
       let allowedKeys = [
         'stage1_visible', 'stage2_visible', 'stage3_visible', 'secret_surprise_visible',
+        'secret_surprise_audio', 'secret_surprise_custom',
         'stage1_unlock_time', 'stage2_unlock_time', 'stage3_unlock_time',
         'updatedAt'
       ];
       return hasOnlyAllowedFields(allowedKeys) &&
         (!('secret_surprise_visible' in data) || data.secret_surprise_visible is bool) &&
+        (!('secret_surprise_audio' in data) || (data.secret_surprise_audio is string && data.secret_surprise_audio.size() <= 800000)) &&
+        (!('secret_surprise_custom' in data) || data.secret_surprise_custom is map || (data.secret_surprise_custom is string && data.secret_surprise_custom.size() <= 800000)) &&
         (!('stage1_visible' in data) || data.stage1_visible is bool) &&
         (!('stage2_visible' in data) || data.stage2_visible is bool) &&
         (!('stage3_visible' in data) || data.stage3_visible is bool) &&

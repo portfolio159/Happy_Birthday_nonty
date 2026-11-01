@@ -73,6 +73,9 @@ window.BirthdayFirebase = (function () {
           if (data.secret_surprise_visible !== undefined) {
             localStorage.setItem('secret_surprise_visible', String(data.secret_surprise_visible));
           }
+          if (data.secret_surprise_audio) {
+            localStorage.setItem('secret_surprise_audio', String(data.secret_surprise_audio));
+          }
           if (data.secret_surprise_custom) {
             localStorage.setItem('secret_surprise_custom', typeof data.secret_surprise_custom === 'string' ? data.secret_surprise_custom : JSON.stringify(data.secret_surprise_custom));
           }

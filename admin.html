@@ -595,7 +595,7 @@
     <!-- Firebase Cloud Sync SDKs (v10.12.0 compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="js/birthday-firebase.js?v=20261030c"></script>
+    <script src="js/birthday-firebase.js?v=20261101a"></script>
     <script>
         // ── Helpers ──────────────────────────────────────────────
 
@@ -946,13 +946,26 @@
 
         function syncStagesToCloud() {
             if (window.BirthdayFirebase) {
-                window.BirthdayFirebase.saveStagesCloud({
+                var payload = {
                     stage2_visible: localStorage.getItem('stage2_visible') === 'true',
                     stage3_visible: localStorage.getItem('stage3_visible') === 'true',
                     stage2_unlock_time: getUnlockTime('stage2'),
                     stage3_unlock_time: getUnlockTime('stage3'),
                     secret_surprise_visible: localStorage.getItem('secret_surprise_visible') === 'true'
-                }).then(function (ok) {
+                };
+
+                var customStr = localStorage.getItem('secret_surprise_custom');
+                if (customStr) {
+                    try { payload.secret_surprise_custom = JSON.parse(customStr); } catch (_) {}
+                }
+                var audioStr = localStorage.getItem('secret_surprise_audio');
+                if (audioStr) {
+                    payload.secret_surprise_audio = audioStr;
+                } else {
+                    payload.secret_surprise_audio = 'audio/myaudio.m4a';
+                }
+
+                window.BirthdayFirebase.saveStagesCloud(payload).then(function (ok) {
                     if (ok) console.log('[Admin] Stages & Surprise synced to cloud');
                 });
             }
@@ -1058,6 +1071,7 @@
                             audioBadge.className = 'badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill';
                         }
                         showToast('Voice recording uploaded and saved successfully! 🎙️💖', 'success');
+                        syncStagesToCloud();
                     } catch (err) {
                         console.error('Storage quota exceeded or error:', err);
                         showToast('Audio file is too large for browser local cache. Try a shorter audio or save it in audio/ folder and enter its path!', 'danger');
@@ -1082,6 +1096,7 @@
                     audioBadge.className = 'badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill';
                 }
                 showToast('Audio path updated and saved! 🎶', 'success');
+                syncStagesToCloud();
             } else {
                 clearSurpriseAudio();
             }
@@ -1107,6 +1122,7 @@
                 audioBadge.textContent = 'No Audio Uploaded';
                 audioBadge.className = 'badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill';
             }
+            syncStagesToCloud();
             showToast('Voice recording removed.', 'warning');
         }
 

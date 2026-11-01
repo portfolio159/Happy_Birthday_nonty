@@ -754,20 +754,28 @@ function renderSecretSurpriseSection() {
     if (navItem) navItem.classList.add('d-none');
   }
 
-  // Populate custom values if saved from dashboard
+  // Populate custom values if saved from dashboard or fallback from bundled data
   try {
     const customRaw = localStorage.getItem('secret_surprise_custom');
     const storedAudio = localStorage.getItem('secret_surprise_audio');
     const audioEl = document.getElementById('surprise-voice-audio');
 
-    if (audioEl && storedAudio) {
-      if (audioEl.src !== storedAudio) {
-        audioEl.src = storedAudio;
+    const fallbackAudio = (window.BIRTHDAY_DATA && window.BIRTHDAY_DATA.surprise && window.BIRTHDAY_DATA.surprise.audio)
+      ? window.BIRTHDAY_DATA.surprise.audio
+      : 'audio/myaudio.m4a';
+
+    const activeAudio = storedAudio || fallbackAudio;
+    if (audioEl && activeAudio) {
+      if (!audioEl.src || !audioEl.src.endsWith(activeAudio)) {
+        audioEl.src = activeAudio;
       }
     }
 
-    if (customRaw) {
-      const data = JSON.parse(customRaw);
+    const data = customRaw
+      ? JSON.parse(customRaw)
+      : (window.BIRTHDAY_DATA && window.BIRTHDAY_DATA.surprise ? window.BIRTHDAY_DATA.surprise : null);
+
+    if (data) {
       const titleEl = document.getElementById('surprise-display-title');
       const nameEl = document.getElementById('surprise-display-name');
       const salutationEl = document.getElementById('letter-salutation');
